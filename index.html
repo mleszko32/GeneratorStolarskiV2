@@ -3,24 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Stolarski 3D - Prototyp v1.0</title>
+    <title>Generator Stolarski 3D - Wersja 2.4 (Poprawka Pustki)</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; display: flex; flex-wrap: wrap; gap: 20px; }
-        
-        /* Panel sterowania */
-        .panel-left { flex: 1; min-width: 320px; max-width: 400px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; }
-        
-        /* Przestrzeń robocza 3D */
-        .panel-right { flex: 3; min-width: 400px; height: calc(100vh - 40px); background: #e8ebed; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #ccc; display: flex; justify-content: center; align-items: center; }
-        
-        h2 { margin-top: 0; font-size: 1.2rem; color: #1F4E79; border-bottom: 2px solid #E2EFDA; padding-bottom: 8px; }
-        label { display: block; font-size: 0.85rem; font-weight: bold; margin-top: 15px; margin-bottom: 5px; color: #555; }
-        input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; background: #f9fbfd; }
+        .panel-left { flex: 1; min-width: 340px; max-width: 420px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; overflow-y: auto; height: calc(100vh - 40px); box-sizing: border-box; }
+        .panel-right { flex: 3; min-width: 400px; height: calc(100vh - 40px); background: #e8ebed; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #ccc; }
+        h2, h3 { color: #1F4E79; margin-top: 0; }
+        h2 { font-size: 1.2rem; border-bottom: 2px solid #E2EFDA; padding-bottom: 8px; margin-bottom: 15px; }
+        h3 { font-size: 1rem; margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        label { display: block; font-size: 0.85rem; font-weight: bold; margin-top: 8px; margin-bottom: 4px; color: #555; }
+        input[type="number"], select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem; background: #f9fbfd; }
         input:focus, select:focus { outline: none; border-color: #1F4E79; background: #fff; }
-        
         #canvas-container { width: 100%; height: 100%; display: block; }
-        
-        .instructions { position: absolute; bottom: 15px; left: 15px; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 6px; font-size: 0.8rem; color: #333; pointer-events: none; }
+        #inspector { background: #e3f2fd; padding: 15px; border-radius: 6px; border: 1px solid #90caf9; margin-top: 15px; display: none; }
+        #inspector h4 { margin: 0 0 10px 0; color: #1565c0; font-size: 1.05rem; border-bottom: 1px solid #90caf9; padding-bottom: 5px; }
+        .cut-list { font-size: 0.85rem; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #ddd; }
+        .cut-list table { width: 100%; border-collapse: collapse; }
+        .cut-list th, .cut-list td { padding: 4px; text-align: left; border-bottom: 1px solid #eee; }
+        .instructions { position: absolute; bottom: 15px; left: 15px; background: rgba(255,255,255,0.85); padding: 10px; border-radius: 6px; font-size: 0.8rem; color: #333; pointer-events: none; border: 1px solid #ddd; }
     </style>
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -28,169 +29,398 @@
 <body>
 
     <div class="panel-left">
-        <h2>Parametry Korpusu 3D</h2>
-        
-        <label>Wysokość szafki (H) [mm]</label>
-        <input type="number" id="hBox" value="720" min="100" oninput="updateCabinet()">
-        
-        <label>Szerokość szafki (W) [mm]</label>
-        <input type="number" id="wBox" value="600" min="100" oninput="updateCabinet()">
-        
-        <label>Głębokość szafki (D) [mm]</label>
-        <input type="number" id="dBox" value="510" min="100" oninput="updateCabinet()">
-        
-        <label>Grubość płyty (T) [mm]</label>
-        <input type="number" id="tBoard" value="18" min="10" oninput="updateCabinet()">
-        
-        <label>Konstrukcja wieńców</label>
-        <select id="kTyp" onchange="updateCabinet()">
-            <option value="wpuszczane">Wpuszczane (między boki)</option>
-            <option value="nakladane">Nakładane (na boki)</option>
-        </select>
+        <h2>Gabaryty KORPUSU</h2>
+        <div class="grid-2col">
+            <div><label>Wysokość korpusu</label><input type="number" id="g_height" value="720" oninput="updateGlobal('height', this.value)"></div>
+            <div><label>Szerokość całk.</label><input type="number" id="g_width" value="600" oninput="updateGlobal('width', this.value)"></div>
+            <div><label>Głębokość (D)</label><input type="number" id="g_depth" value="510" oninput="updateGlobal('depth', this.value)"></div>
+            <div><label>Grubość płyty</label><input type="number" id="g_thickness" value="18" oninput="updateGlobal('thickness', this.value)"></div>
+            <div><label>Wysokość cokołu</label><input type="number" value="100" oninput="updateGlobal('baseHeight', this.value)"></div>
+        </div>
+
+        <h3>Główne założenia</h3>
+        <div class="grid-2col">
+            <div><label>Zwieńczenie góry</label>
+                <select onchange="updateConfig('topMode', this.value)">
+                    <option value="wieniec">Wieniec pełny</option>
+                    <option value="trawersy">Trawersy</option>
+                </select>
+            </div>
+            <div><label>Typ pleców</label>
+                <select onchange="updateConfig('backType', this.value)">
+                    <option value="nut">Wpuszczane w nut</option>
+                    <option value="nakladane">Nakładane</option>
+                    <option value="brak">Brak pleców</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="inspector">
+            <h4>Edycja: <span id="ins_name">-</span></h4>
+            <p style="margin:2px 0 10px 0; font-size: 0.85rem; color: #555;" id="ins_dim">-</p>
+            <div id="ins_options"></div>
+        </div>
+
+        <h3>Rozkrój (Na żywo)</h3>
+        <div class="cut-list" id="cutListContainer"></div>
     </div>
 
     <div class="panel-right">
         <div id="canvas-container"></div>
-        <div class="instructions">
-            <b>Sterowanie:</b><br>
-            • Lewy przycisk: Obrót (Orbit)<br>
-            • Prawy przycisk: Przesunięcie (Pan)<br>
-            • Kółko myszy: Przybliż/Oddal (Zoom)
-        </div>
+        <div class="instructions">Lewy klik: <b>Zaznacz/Edytuj</b> | Prawy klik: <b>Przesuń</b> | Scroll: <b>Zoom</b></div>
     </div>
 
     <script>
-        // --- 1. USTAWIENIA BAZOWE THREE.JS ---
+        // --- 1. STAN APLIKACJI ---
+        const state = {
+            global: { width: 600, height: 720, depth: 510, thickness: 18, baseHeight: 100 },
+            config: { 
+                topMode: 'wieniec', 
+                traverseWidth: 80,
+                backType: 'nut', hdfThickness: 3, nutOffset: 15
+            },
+            parts: {
+                leftSide:  { id: 'leftSide', name: 'Bok Lewy', material: 'korpus', active: true, toFloor: false, w:0, h:0, d:0, x:0, y:0, z:0 },
+                rightSide: { id: 'rightSide', name: 'Bok Prawy', material: 'korpus', active: true, toFloor: false, w:0, h:0, d:0, x:0, y:0, z:0 },
+                bottom:    { id: 'bottom', name: 'Wieniec Dolny', material: 'korpus', active: true, leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', w:0, h:0, d:0, x:0, y:0, z:0 },
+                
+                top:       { id: 'top', name: 'Wieniec Górny', material: 'korpus', active: true, leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', frontOffset: 0, w:0, h:0, d:0, x:0, y:0, z:0 },
+                travFront: { id: 'travFront', name: 'Trawers Przód', material: 'trawers', active: false, orient: 'poziom', leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', frontOffset: 0, w:0, h:0, d:0, x:0, y:0, z:0 },
+                travBack:  { id: 'travBack', name: 'Trawers Tył', material: 'trawers', active: false, orient: 'poziom', leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', w:0, h:0, d:0, x:0, y:0, z:0 },
+                
+                back:      { id: 'back', name: 'Plecy HDF', material: 'hdf', active: true, w:0, h:0, d:0, x:0, y:0, z:0 }
+            }
+        };
+
+        const mats = {
+            'korpus': new THREE.MeshLambertMaterial({ color: 0x90caf9, transparent: true, opacity: 0.6 }),
+            'trawers': new THREE.MeshLambertMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.8 }),
+            'hdf': new THREE.MeshLambertMaterial({ color: 0xffcc80, transparent: true, opacity: 0.7 }),
+            'selected': new THREE.MeshLambertMaterial({ color: 0xffeb3b })
+        };
+
+        // --- 2. ZAAWANSOWANY SILNIK REGUŁ ---
+        function recalculateGeometry() {
+            const g = state.global; const c = state.config; const p = state.parts;
+            
+            let botLeftX = (p.bottom.leftJoint === 'nakladany') ? -g.width/2 : -g.width/2 + g.thickness;
+            let botRightX = (p.bottom.rightJoint === 'nakladany') ? g.width/2 : g.width/2 - g.thickness;
+            p.bottom.w = botRightX - botLeftX;
+            p.bottom.h = g.thickness;
+            p.bottom.d = g.depth;
+            p.bottom.x = botLeftX + (p.bottom.w / 2);
+            p.bottom.y = g.baseHeight + g.thickness/2;
+            p.bottom.z = 0;
+
+            if (c.topMode === 'wieniec') {
+                p.top.active = true;
+                p.travFront.active = false;
+                p.travBack.active = false;
+            } else {
+                p.top.active = false;
+            }
+            
+            let topCabinetY = g.baseHeight + g.height;
+            let topLeftX = (p.top.leftJoint === 'nakladany') ? -g.width/2 : -g.width/2 + g.thickness;
+            let topRightX = (p.top.rightJoint === 'nakladany') ? g.width/2 : g.width/2 - g.thickness;
+            
+            p.top.w = topRightX - topLeftX;
+            p.top.h = g.thickness;
+            p.top.d = g.depth - p.top.frontOffset; 
+            p.top.x = topLeftX + (p.top.w / 2);
+            p.top.y = topCabinetY - g.thickness/2;
+            p.top.z = -p.top.frontOffset / 2; 
+
+            [p.travFront, p.travBack].forEach(trav => {
+                let tLeftX = (trav.leftJoint === 'nakladany') ? -g.width/2 : -g.width/2 + g.thickness;
+                let tRightX = (trav.rightJoint === 'nakladany') ? g.width/2 : g.width/2 - g.thickness;
+                trav.w = tRightX - tLeftX;
+                trav.h = (trav.orient === 'poziom') ? g.thickness : c.traverseWidth;
+                trav.d = (trav.orient === 'poziom') ? c.traverseWidth : g.thickness;
+                trav.x = tLeftX + (trav.w / 2);
+                trav.y = topCabinetY - trav.h/2;
+            });
+            
+            p.travFront.z = g.depth/2 - p.travFront.d/2 - p.travFront.frontOffset; 
+
+            if (c.backType === 'nut') {
+                p.travBack.z = -g.depth/2 + c.nutOffset + c.hdfThickness + p.travBack.d/2;
+            } else {
+                p.travBack.z = -g.depth/2 + p.travBack.d/2;
+            }
+
+            const calcSide = (sideKey, jointBot, jointTop) => {
+                let side = p[sideKey];
+                let bottomY = side.toFloor ? 0 : g.baseHeight;
+                if (jointBot === 'nakladany') bottomY = g.baseHeight + g.thickness; 
+                
+                let topY = topCabinetY;
+                if (c.topMode === 'wieniec' && jointTop === 'nakladany') topY -= g.thickness;
+                if (c.topMode === 'trawersy') {
+                    let maxDrop = 0;
+                    if (p.travFront.active && p.travFront[sideKey === 'leftSide' ? 'leftJoint' : 'rightJoint'] === 'nakladany') {
+                        maxDrop = Math.max(maxDrop, p.travFront.h);
+                    }
+                    if (p.travBack.active && p.travBack[sideKey === 'leftSide' ? 'leftJoint' : 'rightJoint'] === 'nakladany') {
+                        maxDrop = Math.max(maxDrop, p.travBack.h);
+                    }
+                    topY -= maxDrop;
+                }
+
+                side.w = g.thickness;
+                side.h = topY - bottomY;
+                side.d = g.depth;
+                side.x = (sideKey === 'leftSide') ? (-g.width/2 + g.thickness/2) : (g.width/2 - g.thickness/2);
+                side.y = bottomY + side.h/2;
+                side.z = 0;
+            };
+
+            calcSide('leftSide', p.bottom.leftJoint, p.top.leftJoint);
+            calcSide('rightSide', p.bottom.rightJoint, p.top.rightJoint);
+
+            p.back.active = (c.backType !== 'brak');
+            if (c.backType === 'nut') {
+                let hdfH = g.height - (2 * g.thickness);
+                p.back.w = g.width - (2 * g.thickness); p.back.h = hdfH; p.back.d = c.hdfThickness;
+                p.back.x = 0; p.back.y = g.baseHeight + g.thickness + hdfH/2;
+                p.back.z = -g.depth/2 + c.nutOffset + c.hdfThickness/2;
+            } else if (c.backType === 'nakladane') {
+                let hdfH = g.height;
+                p.back.w = g.width; p.back.h = hdfH; p.back.d = c.hdfThickness;
+                p.back.x = 0; p.back.y = g.baseHeight + hdfH/2;
+                p.back.z = -g.depth/2 - c.hdfThickness/2;
+            }
+        }
+
+        // --- 3. KLASA PŁYTY (OOP) ---
+        class CabinetPart {
+            constructor(partData) {
+                this.id = partData.id;
+                this.baseMaterial = mats[partData.material];
+                const geom = new THREE.BoxGeometry(1, 1, 1);
+                this.mesh = new THREE.Mesh(geom, this.baseMaterial.clone());
+                const edges = new THREE.EdgesGeometry(geom);
+                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x153a5b, linewidth: 2 }));
+                this.mesh.add(line);
+                this.mesh.userData = { id: this.id, isPart: true };
+                this.update(partData);
+            }
+            update(partData) {
+                this.mesh.visible = partData.active;
+                this.mesh.scale.set(partData.w, partData.h, partData.d);
+                this.mesh.position.set(partData.x, partData.y, partData.z);
+            }
+            select() { this.mesh.material = mats['selected']; }
+            deselect() { this.mesh.material = this.baseMaterial; }
+        }
+
+        // --- 4. INICJALIZACJA THREE.JS ---
         const container = document.getElementById('canvas-container');
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf4f7f6); // Jasne, warsztatowe tło
-
-        // Kamera
+        const scene = new THREE.Scene(); scene.background = new THREE.Color(0xe8ebed);
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 1, 10000);
-        // Ustawiamy kamerę tak, by patrzyła na szafkę z góry pod kątem (izometria)
-        camera.position.set(1000, 1000, 1500); 
-
-        // Renderer
+        camera.position.set(900, 800, 1200);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(renderer.domElement);
-
-        // Kontrolery (OrbitControls)
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true; 
-        controls.dampingFactor = 0.05;
+        controls.target.set(0, 350, 0); controls.enableDamping = true;
 
-        // Światła
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Miękkie światło rozproszone
-        scene.add(ambientLight);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5); dirLight.position.set(500, 1000, 800); scene.add(dirLight);
+        const cabinetGroup = new THREE.Group(); scene.add(cabinetGroup);
+        scene.add(new THREE.GridHelper(2000, 20, 0xcccccc, 0xdddddd));
+        const sceneParts = {};
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-        directionalLight.position.set(500, 1000, 500);
-        scene.add(directionalLight);
+        // --- 5. LOGIKA UI ---
+        function updateScene() {
+            recalculateGeometry();
+            for (const key in state.parts) {
+                const data = state.parts[key];
+                if (!sceneParts[key]) { sceneParts[key] = new CabinetPart(data); cabinetGroup.add(sceneParts[key].mesh); } 
+                else { sceneParts[key].update(data); }
+            }
+            updateCutList();
+            if(selectedPartId) refreshInspectorDimensions(selectedPartId);
+        }
 
-        // Grupa trzymająca całą szafkę
-        const cabinetGroup = new THREE.Group();
-        scene.add(cabinetGroup);
+        function updateGlobal(param, value) { state.global[param] = parseFloat(value) || 0; updateScene(); }
+        function updateConfig(param, value) { 
+            state.config[param] = (param === 'traverseWidth' || param === 'nutOffset') ? parseFloat(value) : value; 
+            
+            // Wymuszamy przywrócenie trawersów przy resecie z menu głównego
+            if (param === 'topMode' && value === 'trawersy') {
+                state.parts.travFront.active = true;
+                state.parts.travBack.active = true;
+            }
+            
+            // Zamykamy inspektora, jeśli wyłączyliśmy aktywny element globalnie
+            if (selectedPartId === 'back' && param === 'backType' && value === 'brak') hideInspector();
+            if ((selectedPartId === 'top' || selectedPartId === 'travFront' || selectedPartId === 'travBack') && param === 'topMode') hideInspector();
+            
+            updateScene(); 
+        }
+        function updatePart(id, param, value) {
+            if (value === 'true') value = true;
+            if (value === 'false') value = false;
+            if (param === 'frontOffset') value = parseFloat(value) || 0;
+            
+            state.parts[id][param] = value;
+            updateScene();
+            
+            // Jeśli element został właśnie wyłączony (trawers), zamknij jego inspektor
+            if (param === 'active' && value === false) hideInspector();
+            else buildInspectorContent(id);
+        }
 
-        // --- 2. DEFINICJA MATERIAŁU TECHNICZNEGO ---
-        // Półprzezroczysty materiał, aby widzieć kolizje i krawędzie
-        const boardMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0x90caf9, 
-            transparent: true, 
-            opacity: 0.6,
-            side: THREE.DoubleSide
+        function updateCutList() {
+            let html = '<table><tr><th>Element</th><th>Wym. (mm)</th></tr>';
+            for (const key in state.parts) {
+                const p = state.parts[key];
+                if(p.active) {
+                    const dims = [Math.round(p.w), Math.round(p.h), Math.round(p.d)].sort((a,b) => b-a);
+                    html += `<tr><td>${p.name}</td><td>${dims[0]} x ${dims[1]} x ${dims[2]}</td></tr>`;
+                }
+            }
+            document.getElementById('cutListContainer').innerHTML = html + '</table>';
+        }
+
+        // --- 6. RAYCASTER I INSPEKTOR KONTEKSTOWY ---
+        const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2(); let selectedPartId = null;
+        renderer.domElement.addEventListener('pointerdown', (event) => {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1; mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            
+            const intersects = raycaster.intersectObjects(cabinetGroup.children, true);
+            for (const key in sceneParts) sceneParts[key].deselect();
+            
+            let validObject = null;
+            for (let i = 0; i < intersects.length; i++) {
+                let obj = intersects[i].object;
+                while (obj && (!obj.userData || !obj.userData.isPart)) obj = obj.parent;
+                if (obj && obj.userData.isPart && obj.visible) {
+                    validObject = obj;
+                    break;
+                }
+            }
+
+            if (validObject) {
+                selectedPartId = validObject.userData.id;
+                sceneParts[selectedPartId].select();
+                buildInspectorContent(selectedPartId);
+            } else {
+                hideInspector();
+            }
         });
+
+        function buildInspectorContent(id) {
+            const part = state.parts[id]; const c = state.config;
+            document.getElementById('inspector').style.display = 'block';
+            document.getElementById('ins_name').innerText = part.name;
+            refreshInspectorDimensions(id);
+
+            let html = '';
+            
+            if (id === 'leftSide' || id === 'rightSide') {
+                html += `
+                    <label>Styk z podłogą:</label>
+                    <select onchange="updatePart('${id}', 'toFloor', this.value)">
+                        <option value="false" ${!part.toFloor?'selected':''}>Na cokole / nóżkach</option>
+                        <option value="true" ${part.toFloor?'selected':''}>Bok schodzi do ziemi</option>
+                    </select>
+                `;
+            }
+            else if (id === 'bottom' || id === 'top') {
+                if (id === 'top') {
+                    html += `
+                        <label>Skrócenie od frontu (mm):</label>
+                        <input type="number" value="${part.frontOffset}" oninput="updatePart('${id}', 'frontOffset', this.value)">
+                        <hr style="border:0; border-top:1px solid #90caf9; margin:10px 0;">
+                    `;
+                }
+                html += `
+                    <div style="display:flex; gap: 10px;">
+                        <div style="flex:1">
+                            <label>Lewy styk:</label>
+                            <select onchange="updatePart('${id}', 'leftJoint', this.value)">
+                                <option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option>
+                                <option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option>
+                            </select>
+                        </div>
+                        <div style="flex:1">
+                            <label>Prawy styk:</label>
+                            <select onchange="updatePart('${id}', 'rightJoint', this.value)">
+                                <option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option>
+                                <option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+            else if (id === 'travFront' || id === 'travBack') {
+                html += `
+                    <div style="margin-bottom: 10px;">
+                        <label style="color: #d32f2f;">Status elementu:</label>
+                        <select onchange="updatePart('${id}', 'active', this.value)">
+                            <option value="true" ${part.active?'selected':''}>Włączony</option>
+                            <option value="false" ${!part.active?'selected':''}>Wyłącz / Usuń</option>
+                        </select>
+                        
+                        <label>Ułożenie:</label>
+                        <select onchange="updatePart('${id}', 'orient', this.value)">
+                            <option value="poziom" ${part.orient==='poziom'?'selected':''}>Na płasko (Poziom)</option>
+                            <option value="pion" ${part.orient==='pion'?'selected':''}>Na sztorc (Pion)</option>
+                        </select>
+                        
+                        <label>Szerokość trawersów:</label>
+                        <input type="number" value="${c.traverseWidth}" oninput="updateConfig('traverseWidth', this.value)">
+                    </div>
+                `;
+                
+                if (id === 'travFront') {
+                    html += `
+                        <label>Odsunięcie od frontu (mm):</label>
+                        <input type="number" value="${part.frontOffset}" oninput="updatePart('${id}', 'frontOffset', this.value)" style="margin-bottom: 10px;">
+                    `;
+                }
+
+                html += `
+                    <div style="display:flex; gap: 10px;">
+                        <div style="flex:1">
+                            <label>Lewy styk:</label>
+                            <select onchange="updatePart('${id}', 'leftJoint', this.value)">
+                                <option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option>
+                                <option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option>
+                            </select>
+                        </div>
+                        <div style="flex:1">
+                            <label>Prawy styk:</label>
+                            <select onchange="updatePart('${id}', 'rightJoint', this.value)">
+                                <option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option>
+                                <option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+            else if (id === 'back') {
+                if(c.backType === 'nut') {
+                    html += `<label>Odsunięcie nutu (od krawędzi tyłu):</label>
+                             <input type="number" value="${c.nutOffset}" oninput="updateConfig('nutOffset', this.value)">`;
+                } else {
+                    html += `<p style="font-size:0.85rem; color:#666;">Plecy nakładane nie posiadają dodatkowych opcji offsetu.</p>`;
+                }
+            }
+            document.getElementById('ins_options').innerHTML = html;
+        }
+
+        function refreshInspectorDimensions(id) { document.getElementById('ins_dim').innerText = `${state.parts[id].w.toFixed(1)} x ${state.parts[id].h.toFixed(1)} x ${state.parts[id].d.toFixed(1)} mm`; }
+        function hideInspector() { selectedPartId = null; document.getElementById('inspector').style.display = 'none'; }
+        function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+        window.addEventListener('resize', () => { const width = container.clientWidth; const height = container.clientHeight; renderer.setSize(width, height); camera.aspect = width / height; camera.updateProjectionMatrix(); });
         
-        // Funkcja pomocnicza: tworzy formatkę wraz z wyrysowanymi czarnymi/ciemnymi krawędziami
-        function createBoard(w, h, d, x, y, z) {
-            // Główna bryła
-            const geometry = new THREE.BoxGeometry(w, h, d);
-            const mesh = new THREE.Mesh(geometry, boardMaterial);
-            mesh.position.set(x, y, z);
-            
-            // Krawędzie (Wireframe) uwydatniające formatkę
-            const edges = new THREE.EdgesGeometry(geometry);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x153a5b, linewidth: 2 }));
-            mesh.add(line); // Dodajemy krawędzie jako dziecko formatki
-            
-            return mesh;
-        }
-
-        // --- 3. LOGIKA BUDOWY SZAFKI ---
-        function updateCabinet() {
-            // Pobranie danych z formularza
-            const H = parseFloat(document.getElementById('hBox').value) || 0;
-            const W = parseFloat(document.getElementById('wBox').value) || 0;
-            const D = parseFloat(document.getElementById('dBox').value) || 0;
-            const T = parseFloat(document.getElementById('tBoard').value) || 0;
-            const kTyp = document.getElementById('kTyp').value;
-
-            // Czyszczenie poprzedniej szafki przed wygenerowaniem nowej
-            while(cabinetGroup.children.length > 0){ 
-                cabinetGroup.remove(cabinetGroup.children[0]); 
-            }
-
-            // Definicja zmiennych formatek
-            let leftSide, rightSide, topPanel, bottomPanel;
-
-            // Oś Y w Three.js rośnie w górę, środek ekranu to 0. 
-            // Aby szafka stała na "ziemi", dół szafki ustawiamy od ZERA w górę.
-            // X lewo/prawo. Z przód/tył.
-
-            if (kTyp === 'wpuszczane') {
-                // BOKI pełna wysokość, WIEŃCE wpuszczone między boki
-                
-                // Bok lewy
-                leftSide = createBoard(T, H, D,  -W/2 + T/2,  H/2,  0);
-                // Bok prawy
-                rightSide = createBoard(T, H, D,  W/2 - T/2,  H/2,  0);
-                
-                // Wieniec dolny
-                bottomPanel = createBoard(W - 2*T, T, D,  0,  T/2,  0);
-                // Wieniec górny
-                topPanel = createBoard(W - 2*T, T, D,  0,  H - T/2,  0);
-
-            } else { // nakladane
-                // WIEŃCE pełna szerokość, BOKI zamknięte między wieńcami
-                
-                // Wieniec dolny
-                bottomPanel = createBoard(W, T, D,  0,  T/2,  0);
-                // Wieniec górny
-                topPanel = createBoard(W, T, D,  0,  H - T/2,  0);
-                
-                // Bok lewy
-                leftSide = createBoard(T, H - 2*T, D,  -W/2 + T/2,  H/2,  0);
-                // Bok prawy
-                rightSide = createBoard(T, H - 2*T, D,  W/2 - T/2,  H/2,  0);
-            }
-
-            // Dodanie elementów do grupy szafki
-            cabinetGroup.add(leftSide);
-            cabinetGroup.add(rightSide);
-            cabinetGroup.add(bottomPanel);
-            cabinetGroup.add(topPanel);
-        }
-
-        // --- 4. PĘTLA ANIMACJI (RENDER) ---
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update(); // Wymagane dla gładkiego obracania
-            renderer.render(scene, camera);
-        }
-
-        // Aktualizacja rozmiaru okna
-        window.addEventListener('resize', () => {
-            const width = container.clientWidth;
-            const height = container.clientHeight;
-            renderer.setSize(width, height);
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-        });
-
-        // Start aplikacji
-        updateCabinet();
-        animate();
-
+        // --- START ---
+        updateScene(); animate();
     </script>
 </body>
 </html>
