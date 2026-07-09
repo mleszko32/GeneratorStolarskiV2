@@ -12,6 +12,18 @@
     </style>
 </head>
 <body>
+    <div class="config-panel">
+    <h3>Konstrukcja Korpusu</h3>
+    <select id="baseType">
+        <option value="feet">Nóżki</option>
+        <option value="sides">Boki do ziemi</option>
+    </select>
+    <select id="topType">
+        <option value="full">Wieniec pełny</option>
+        <option value="rails">Listwy przednia/tylna</option>
+    </select>
+    <button onclick="updateConstruction()">Zastosuj konstrukcję</button>
+</div>
     <div class="app-container">
         <div class="panel-ui" id="controlPanel">
             <h2>Panel Sterowania</h2>
