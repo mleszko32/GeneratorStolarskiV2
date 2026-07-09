@@ -2,78 +2,88 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Stolarski V2 (Silnik Drzewa)</title>
+    <title>Generator V2 - Edytor Komór</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
-        .app-container { display: flex; gap: 20px; height: calc(100vh - 40px); }
-        .panel-ui { flex: 1; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .panel-cad { flex: 2; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column;}
-        
-        h2 { margin-top: 0; color: #1F4E79; border-bottom: 2px solid #E2EFDA; padding-bottom: 10px; font-size: 1.2rem; }
-        
-        .svg-container { flex: 1; background: #fafafa; border: 1px dashed #ccc; border-radius: 6px; margin-top: 15px; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .svg-wrapper { width: 100%; height: 100%; }
-        
-        button { background: #1F4E79; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
-        button:hover { background: #153a5b; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .app-container { display: flex; gap: 20px; }
+        .panel-ui { flex: 1; background: white; padding: 20px; border-radius: 8px; }
+        .panel-cad { flex: 2; background: white; padding: 20px; border-radius: 8px; }
+        .btn-action { background: #2e7d32; color: white; border: none; padding: 8px; width: 100%; margin-top: 5px; cursor: pointer; border-radius: 4px; }
     </style>
 </head>
 <body>
-
     <div class="app-container">
-        <div class="panel-ui">
+        <div class="panel-ui" id="controlPanel">
             <h2>Panel Sterowania</h2>
-            <p style="font-size: 0.9rem; color: #666;">Silnik podzielił szafę zgodnie z kodem (Nadstawka + Podział Dolny).</p>
-            <button onclick="renderCAD()">🔄 Przelicz i Rysuj CAD</button>
+            <p>Kliknij w dowolną komorę na rysunku, aby ją edytować.</p>
         </div>
-
         <div class="panel-cad">
-            <h2>Podgląd Przestrzeni (CAD 2D)</h2>
-            <div class="svg-container">
-                <div id="svgWrapper" class="svg-wrapper"></div>
-            </div>
+            <div id="svgWrapper"></div>
         </div>
     </div>
 
     <script>
-  // 1. KLASY (Logika szafy)
         class SpaceNode {
-            constructor(id, x, y, width, height, depth) {
+            constructor(id, x, y, width, height) {
                 this.id = id; this.x = x; this.y = y; this.width = width;
-                this.height = height; this.depth = depth;
-                this.splitType = null; this.children = [];
+                this.height = height; this.splitType = null; this.children = [];
             }
-            split(type, partsCount, boardThickness = 18) {
+            split(type, partsCount, thickness = 18) {
                 this.splitType = type;
                 if (type === 'H') {
-                    let h = (this.height - ((partsCount - 1) * boardThickness)) / partsCount;
+                    let h = (this.height - ((partsCount - 1) * thickness)) / partsCount;
                     for (let i = 0; i < partsCount; i++) 
-                        this.children.push(new SpaceNode(`${this.id}-H${i+1}`, this.x, this.y + i*(h + boardThickness), this.width, h, this.depth));
+                        this.children.push(new SpaceNode(`${this.id}-H${i+1}`, this.x, this.y + i*(h + thickness), this.width, h));
                 } else if (type === 'V') {
-                    let w = (this.width - ((partsCount - 1) * boardThickness)) / partsCount;
+                    let w = (this.width - ((partsCount - 1) * thickness)) / partsCount;
                     for (let i = 0; i < partsCount; i++) 
-                        this.children.push(new SpaceNode(`${this.id}-V${i+1}`, this.x + i*(w + boardThickness), this.y, w, this.height, this.depth));
+                        this.children.push(new SpaceNode(`${this.id}-V${i+1}`, this.x + i*(w + thickness), this.y, w, this.height));
                 }
             }
         }
 
-        // 2. LOGIKA BUDOWANIA (Tu tworzymy strukturę)
-        let myCabinet = { root: new SpaceNode('Szafa', 0, 0, 1200, 2460, 510) };
-        myCabinet.root.split('H', 2);
-        let gora = myCabinet.root.children[0];
-        let dol = myCabinet.root.children[1];
-        gora.height = 460; dol.height = 2460 - 460 - 18; dol.y = 460 + 18;
-        dol.split('V', 2);
+        let rootNode = new SpaceNode('Szafa', 0, 0, 1200, 2460);
+        rootNode.split('H', 2);
+        rootNode.children[0].height = 460;
+        rootNode.children[1].height = 2460 - 460 - 18;
+        rootNode.children[1].y = 478;
 
-        // 3. FUNKCJA RYSOWANIA (Ta, którą masz w edytorze)
+        // Funkcja znajdująca komorę w "drzewie"
+        function findNode(node, id) {
+            if (node.id === id) return node;
+            for (let child of node.children) {
+                let found = findNode(child, id);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function selectSpace(id) {
+            let node = findNode(rootNode, id);
+            let panel = document.getElementById('controlPanel');
+            panel.innerHTML = `
+                <h2>Edycja: ${id}</h2>
+                <p>Szerokość: ${node.width.toFixed(1)} mm</p>
+                <p>Wysokość: ${node.height.toFixed(1)} mm</p>
+                <button class="btn-action" onclick="applySplit('${id}', 'H', 2)">Podziel Poziomo (Półki)</button>
+                <button class="btn-action" onclick="applySplit('${id}', 'V', 2)">Podziel Pionowo (Przegroda)</button>
+                <button class="btn-action" style="background:#d32f2f" onclick="location.reload()">Reset Szafy</button>
+            `;
+        }
+
+        function applySplit(id, type, count) {
+            let node = findNode(rootNode, id);
+            node.split(type, count);
+            renderCAD();
+            selectSpace(id);
+        }
+
         function drawRecursive(node) {
             let svg = '';
             if (node.children.length === 0) {
                 svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" 
-                        fill="#e8f0fe" stroke="#1F4E79" stroke-width="2" 
-                        style="cursor:pointer;" onclick="alert('Wybrano: ${node.id}')" />`;
-                svg += `<text x="${node.x + 10}" y="${node.y + 20}" font-size="12">${node.id}</text>`;
+                        fill="#e8f0fe" stroke="#1F4E79" stroke-width="2" style="cursor:pointer;" 
+                        onclick="selectSpace('${node.id}')" />`;
             } else {
                 node.children.forEach(child => svg += drawRecursive(child));
                 for (let i = 0; i < node.children.length - 1; i++) {
@@ -85,13 +95,11 @@
             return svg;
         }
 
-        // 4. FUNKCJA STARTOWA
         function renderCAD() {
-            let svg = `<svg viewBox="-20 -20 1240 2500" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">`;
-            svg += drawRecursive(myCabinet.root);
-            svg += `</svg>`;
-            document.getElementById('svgWrapper').innerHTML = svg;
+            document.getElementById('svgWrapper').innerHTML = 
+                `<svg viewBox="-20 -20 1240 2500" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">${drawRecursive(rootNode)}</svg>`;
         }
+        renderCAD();
     </script>
 </body>
 </html>
