@@ -33,71 +33,61 @@
     </div>
 
     <script>
-        // --- NOWA ARCHITEKTURA (WZOROWANA NA PALETTE CAD) --- //
-
-        // Klasa reprezentująca każdą "pustą przestrzeń" w szafie
         class SpaceNode {
-            constructor(id, width, height, depth) {
-                this.id = id;
-                this.width = width;
-                this.height = height;
-                this.depth = depth;
-                
-                this.splitType = null; // 'V' (pionowy - stojak), 'H' (poziomy - wieniec), lub null (pusta)
-                this.children = [];    // Wewnętrzne przestrzenie, jeśli tę podzielimy
-                this.items = [];       // Szuflady, półki, fronty przypisane tylko do tej przestrzeni
+            constructor(id, x, y, width, height, depth) {
+                this.id = id; this.x = x; this.y = y; this.width = width;
+                this.height = height; this.depth = depth;
+                this.splitType = null; this.children = [];
             }
 
-            // Metoda do przecięcia tej przestrzeni na pół
             split(type, partsCount, boardThickness = 18) {
                 this.splitType = type;
-                this.children = [];
-
                 if (type === 'H') {
-                    // Podział w poziomie (tworzymy nowe przestrzenie jedne nad drugimi)
-                    let availableHeight = this.height - ((partsCount - 1) * boardThickness);
-                    let partHeight = availableHeight / partsCount;
-                    
-                    for (let i = 0; i < partsCount; i++) {
-                        this.children.push(new SpaceNode(`${this.id}-H${i+1}`, this.width, partHeight, this.depth));
-                    }
-                } 
-                else if (type === 'V') {
-                    // Podział w pionie (tworzymy nowe przestrzenie obok siebie)
-                    let availableWidth = this.width - ((partsCount - 1) * boardThickness);
-                    let partWidth = availableWidth / partsCount;
-                    
-                    for (let i = 0; i < partsCount; i++) {
-                        this.children.push(new SpaceNode(`${this.id}-V${i+1}`, partWidth, this.height, this.depth));
-                    }
+                    let h = (this.height - ((partsCount - 1) * boardThickness)) / partsCount;
+                    for (let i = 0; i < partsCount; i++) 
+                        this.children.push(new SpaceNode(`${this.id}-H${i+1}`, this.x, this.y + i*(h + boardThickness), this.width, h, this.depth));
+                } else if (type === 'V') {
+                    let w = (this.width - ((partsCount - 1) * boardThickness)) / partsCount;
+                    for (let i = 0; i < partsCount; i++) 
+                        this.children.push(new SpaceNode(`${this.id}-V${i+1}`, this.x + i*(w + boardThickness), this.y, w, this.height, this.depth));
                 }
             }
         }
 
-        // Klasa Głównego Korpusu (Kontener matka)
-        class CabinetEngine {
-            constructor(width, height, depth) {
-                this.root = new SpaceNode('Szafa-Główna', width, height, depth);
-            }
-        }
-
-        // --- TESTOWANIE NOWEJ LOGIKI ---
-        function initApp() {
-            // 1. Tworzymy główną szafę o wymiarach z poprzedniego projektu
-            let myCabinet = new CabinetEngine(1200, 2460, 510);
-            
-            // 2. Tniemy główną szafę w poziomie na 2 części (Nadstawka i Dół)
+        let myCabinet;
+        function buildLogic() {
+            myCabinet = { root: new SpaceNode('Szafa', 0, 0, 1200, 2460, 510) };
             myCabinet.root.split('H', 2);
-            
-            // 3. Bierzemy Dolny Moduł (pierwsze dziecko) i tniemy go w PIONIE na dwie sekcje!
-            let dolnyModul = myCabinet.root.children[0];
-            dolnyModul.split('V', 2); // Powstanie komora lewa i prawa
-
-            // Wyświetlamy potęgę nowej architektury w konsoli
-            console.log("Struktura nowego silnika CAD:", myCabinet);
+            let gora = myCabinet.root.children[0];
+            let dol = myCabinet.root.children[1];
+            gora.height = 460; dol.height = 2460 - 460 - 18; dol.y = 460 + 18;
+            dol.split('V', 2);
         }
 
-        window.onload = initApp;
+        function drawRecursive(node) {
+            let svg = '';
+            if (node.children.length === 0) {
+                svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" fill="#e8f0fe" stroke="#1F4E79" stroke-width="2" />`;
+                svg += `<text x="${node.x + 10}" y="${node.y + 20}" font-size="12">${node.id}</text>`;
+            } else {
+                node.children.forEach(child => svg += drawRecursive(child));
+                for (let i = 0; i < node.children.length - 1; i++) {
+                    let c = node.children[i];
+                    if (node.splitType === 'H') svg += `<rect x="${node.x}" y="${c.y + c.height}" width="${node.width}" height="18" fill="#2e7d32" />`;
+                    else svg += `<rect x="${c.x + c.width}" y="${node.y}" width="18" height="${node.height}" fill="#2e7d32" />`;
+                }
+            }
+            return svg;
+        }
+
+        function renderCAD() {
+            buildLogic();
+            let svg = `<svg viewBox="-20 -20 1240 2500" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">`;
+            svg += drawRecursive(myCabinet.root);
+            svg += `</svg>`;
+            document.getElementById('svgWrapper').innerHTML = svg;
+        }
+        window.onload = renderCAD;
     </script>
 </body>
 </html>
