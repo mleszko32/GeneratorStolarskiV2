@@ -37,186 +37,25 @@
     </div>
 
     <script>
-        // --- ARCHITEKTURA V2 (DRZEWO PRZESTRZENI) ---
-
-        class SpaceNode {
-            // Dodajemy współrzędne X i Y dla każdej przestrzeni
-            constructor(id, x, y, width, height, depth) {
-                this.id = id;
-                this.x = x;
-                this.y = y;
-                this.width = width;
-                this.height = height;
-                this.depth = depth;
-                
-                this.splitType = null; 
-                this.children = [];    
-            }
-
-            split(type, partsCount, boardThickness = 18) {
-                this.splitType = type;
-                this.children = [];
-
-                if (type === 'H') { // Cięcie POZIOME (np. Nadstawka lub Półki)
-                    let availableHeight = this.height - ((partsCount - 1) * boardThickness);
-                    let partHeight = availableHeight / partsCount;
-                    let currentY = this.y;
-                    
-                    for (let i = 0; i < partsCount; i++) {
-                        this.children.push(new SpaceNode(`${this.id}-H${i+1}`, this.x, currentY, this.width, partHeight, this.depth));
-                        currentY += partHeight + boardThickness; // Przesunięcie Y o komorę + wieniec
-                    }
-                } 
-                else if (type === 'V') { // Cięcie PIONOWE (Przegrody pionowe)
-                    let availableWidth = this.width - ((partsCount - 1) * boardThickness);
-                    let partWidth = availableWidth / partsCount;
-                    let currentX = this.x;
-                    
-                    for (let i = 0; i < partsCount; i++) {
-                        this.children.push(new SpaceNode(`${this.id}-V${i+1}`, currentX, this.y, partWidth, this.height, this.depth));
-                        currentX += partWidth + boardThickness; // Przesunięcie X o komorę + stojak
-                    }
-                }
-            }
-        }
-
-        class CabinetEngine {
-            constructor(width, height, depth) {
-                // Tworzymy absolutny kontener (od zera)
-                this.root = new SpaceNode('Zabudowa', 0, 0, width, height, depth);
-            }
-        }
-
-        // --- SILNIK RENDERUJĄCY (REKURENCJA) ---
-        function drawSpace(node) {
-            let svgStr = "";
-            
-            // Jeśli przestrzeń ma dzieci (jest podzielona), nie rysujemy jej samej, tylko schodzimy głębiej do dzieci
-            if (node.children && node.children.length > 0 || node.hasDrawers || node.splitType) {
-                // Placeholder - tu będzie rozwinięcie w przyszłości
-            }
-            
-            if (node.children && node.children.length > 0) {
-                 // W tej wersji zastąpiliśmy to prostą tablicą manualFronts w dzieciach
-            }
-
-            if (node.drawerMode || node.hasDrawers || (node.children && node.children.length > 0)) {
-                // To be implemented
-            }
-
-            if (node.manualFronts) {
-                 // To be implemented
-            }
-
-            // Jeśli to ostateczna, najmniejsza komórka (liść), rysujemy ją
-            if (node.children === undefined && node.manualFronts === undefined && (!node.drawerMode || node.drawerMode === 'auto' ) && (!node.children || node.children.length === 0) && (!node.hasDrawers) && (node.qDrawers === undefined || node.qDrawers === 3) ) {
-                // To jest liść drzewa tylko w starej logice. Poniżej prawdziwa rekurencja:
-            }
-
-            // Poprawna rekurencja:
-            if (node.children && node.children.length > 0) {
-                node.children.forEach(child => {
-                    svgStr += drawSpaceRecursive(child);
-                });
-            }
-        }
-        
-        function renderNodeToSVG(node) {
-            let html = "";
-            if (node.manualFronts) {
-                // Puste na razie, żeby uniknąć błędu z poprzedniego kodu
-            }
-            // Jeśli węzeł jest podzielony, narysuj jego dzieci
-            if (node.children && node.children.length > 0) {
-                // Rysujemy element "płyty" pomiędzy dziećmi
-                for (let i = 0; i < node.children.length - 1; i++) {
-                    let childA = node.children[i];
-                    let childB = node.children[i+1];
-                    
-                    if (node.splitType === 'H') {
-                        // Linia pozioma - wieniec/półka (Y między A i B)
-                        html += `<rect x="${childA.x}" y="${childA.yEnd}" width="${childA.width}" height="${childB.yStart - childA.yEnd}" fill="#2e7d32" opacity="0.4" />`;
-                    }
-                }
-            }
-            return html;
-        }
-
-        // Prawdziwa i czysta funkcja rekurencyjna dla V2
-        function generateSVGForNode(node) {
+    function drawRecursive(node) {
             let svg = '';
-            
             if (node.children.length === 0) {
-                // To jest najmniejsza, niepodzielona przestrzeń (światło komory)
-                svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" fill="#e8f0fe" stroke="#1F4E79" stroke-width="2" opacity="0.5" />`;
-                svg += `<text x="${node.x + node.width/2}" y="${node.y + node.height/2}" font-size="14" font-weight="bold" fill="#1F4E79" text-anchor="middle" dominant-baseline="middle">${node.id}</text>`;
-                svg += `<text x="${node.x + node.width/2}" y="${node.y + node.height/2 + 20}" font-size="12" fill="#555" text-anchor="middle" dominant-baseline="middle">${node.width.toFixed(1)} x ${node.height.toFixed(1)}</text>`;
+                // Dodajemy atrybut 'onclick' do każdego prostokąta
+                svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" 
+                        fill="#e8f0fe" stroke="#1F4E79" stroke-width="2" 
+                        style="cursor:pointer;" 
+                        onclick="alert('Wybrano komorę: ${node.id}')" />`;
+                svg += `<text x="${node.x + 10}" y="${node.y + 20}" font-size="12" style="pointer-events:none;">${node.id}</text>`;
             } else {
-                // Jeśli przestrzeń jest podzielona, rysujemy jej dzieci
-                node.children.forEach(child => {
-                    svg += generateSVGForNode(child);
-                });
-
-                // Rysujemy płyty (grubości) pomiędzy dziećmi
+                node.children.forEach(child => svg += drawRecursive(child));
                 for (let i = 0; i < node.children.length - 1; i++) {
-                    let child = node.children[i];
-                    if (node.splitType === 'H') {
-                        // Rysujemy Półkę / Wieniec poziomy
-                        svg += `<rect x="${node.x}" y="${child.y + child.height}" width="${node.width}" height="18" fill="#2e7d32" stroke="#1b5e20" opacity="0.4" />`;
-                    } else if (node.splitType === 'V') {
-                        // Rysujemy Stojak pionowy
-                        svg += `<rect x="${child.x + child.width}" y="${node.y}" width="18" height="${node.height}" fill="#2e7d32" stroke="#1b5e20" opacity="0.4" />`;
-                    }
+                    let c = node.children[i];
+                    if (node.splitType === 'H') svg += `<rect x="${node.x}" y="${c.y + c.height}" width="${node.width}" height="18" fill="#2e7d32" />`;
+                    else svg += `<rect x="${c.x + c.width}" y="${node.y}" width="18" height="${node.height}" fill="#2e7d32" />`;
                 }
             }
             return svg;
         }
-
-        let myCabinet;
-
-        function buildLogic() {
-            // 1. Zdefiniuj Gabaryty Zewnętrzne
-            myCabinet = new CabinetEngine(1200, 2460, 510);
-            
-            // 2. Podział szafy (Nadstawka i Główna komora)
-            myCabinet.root.split('H', 2);
-            
-            // Zmieniamy proporcje - nadstawka mniejsza, dół większy (to poprawimy w UI później)
-            let gora = myCabinet.root.children[0];
-            let dol = myCabinet.root.children[1];
-            
-            // Nadpisujemy wysokości dla asymetrycznego podziału
-            gora.height = 460;
-            dol.height = 2460 - 460 - 18; // minus grubość podwójnego wieńca łączenia
-            dol.y = gora.y + gora.height + 18;
-            
-            // 3. Podział Dolnej Szafy pionowo (Stojak na środku)
-            dol.split('V', 2);
-            
-            // 4. Podział Prawej strony w poziomie (na 4 półki)
-            let prawaDolna = dol.children[1];
-            prawaDolna.split('H', 4);
-        }
-
-        function renderCAD() {
-            buildLogic();
-            let root = myCabinet.root;
-            
-            let svg = `<svg viewBox="-50 -50 ${root.width + 100} ${root.height + 100}" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">`;
-            
-            // Główne tło korpusu
-            svg += `<rect x="0" y="0" width="${root.width}" height="${root.height}" fill="none" stroke="#333" stroke-width="4"/>`;
-            
-            // Wygeneruj wewnętrzne prostokąty rekurencyjnie
-            svg += generateSVGForNode(root);
-            
-            svg += `</svg>`;
-            document.getElementById('svgWrapper').innerHTML = svg;
-        }
-
-        // Uruchom przy starcie
-        window.onload = renderCAD;
-
     </script>
 </body>
 </html>
