@@ -2,116 +2,195 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Generator V2 - Edytor Komór</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Stolarski 3D - Prototyp v1.0</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .app-container { display: flex; gap: 20px; }
-        .panel-ui { flex: 1; background: white; padding: 20px; border-radius: 8px; }
-        .panel-cad { flex: 2; background: white; padding: 20px; border-radius: 8px; }
-        .btn-action { background: #2e7d32; color: white; border: none; padding: 8px; width: 100%; margin-top: 5px; cursor: pointer; border-radius: 4px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; display: flex; flex-wrap: wrap; gap: 20px; }
+        
+        /* Panel sterowania */
+        .panel-left { flex: 1; min-width: 320px; max-width: 400px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        
+        /* Przestrzeń robocza 3D */
+        .panel-right { flex: 3; min-width: 400px; height: calc(100vh - 40px); background: #e8ebed; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #ccc; display: flex; justify-content: center; align-items: center; }
+        
+        h2 { margin-top: 0; font-size: 1.2rem; color: #1F4E79; border-bottom: 2px solid #E2EFDA; padding-bottom: 8px; }
+        label { display: block; font-size: 0.85rem; font-weight: bold; margin-top: 15px; margin-bottom: 5px; color: #555; }
+        input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; background: #f9fbfd; }
+        input:focus, select:focus { outline: none; border-color: #1F4E79; background: #fff; }
+        
+        #canvas-container { width: 100%; height: 100%; display: block; }
+        
+        .instructions { position: absolute; bottom: 15px; left: 15px; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 6px; font-size: 0.8rem; color: #333; pointer-events: none; }
     </style>
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
-    <div class="config-panel">
-    <h3>Konstrukcja Korpusu</h3>
-    <select id="baseType">
-        <option value="feet">Nóżki</option>
-        <option value="sides">Boki do ziemi</option>
-    </select>
-    <select id="topType">
-        <option value="full">Wieniec pełny</option>
-        <option value="rails">Listwy przednia/tylna</option>
-    </select>
-    <button onclick="updateConstruction()">Zastosuj konstrukcję</button>
-</div>
-    <div class="app-container">
-        <div class="panel-ui" id="controlPanel">
-            <h2>Panel Sterowania</h2>
-            <p>Kliknij w dowolną komorę na rysunku, aby ją edytować.</p>
-        </div>
-        <div class="panel-cad">
-            <div id="svgWrapper"></div>
+
+    <div class="panel-left">
+        <h2>Parametry Korpusu 3D</h2>
+        
+        <label>Wysokość szafki (H) [mm]</label>
+        <input type="number" id="hBox" value="720" min="100" oninput="updateCabinet()">
+        
+        <label>Szerokość szafki (W) [mm]</label>
+        <input type="number" id="wBox" value="600" min="100" oninput="updateCabinet()">
+        
+        <label>Głębokość szafki (D) [mm]</label>
+        <input type="number" id="dBox" value="510" min="100" oninput="updateCabinet()">
+        
+        <label>Grubość płyty (T) [mm]</label>
+        <input type="number" id="tBoard" value="18" min="10" oninput="updateCabinet()">
+        
+        <label>Konstrukcja wieńców</label>
+        <select id="kTyp" onchange="updateCabinet()">
+            <option value="wpuszczane">Wpuszczane (między boki)</option>
+            <option value="nakladane">Nakładane (na boki)</option>
+        </select>
+    </div>
+
+    <div class="panel-right">
+        <div id="canvas-container"></div>
+        <div class="instructions">
+            <b>Sterowanie:</b><br>
+            • Lewy przycisk: Obrót (Orbit)<br>
+            • Prawy przycisk: Przesunięcie (Pan)<br>
+            • Kółko myszy: Przybliż/Oddal (Zoom)
         </div>
     </div>
 
     <script>
-        class SpaceNode {
-            constructor(id, x, y, width, height) {
-                this.id = id; this.x = x; this.y = y; this.width = width;
-                this.height = height; this.splitType = null; this.children = [];
+        // --- 1. USTAWIENIA BAZOWE THREE.JS ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf4f7f6); // Jasne, warsztatowe tło
+
+        // Kamera
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 1, 10000);
+        // Ustawiamy kamerę tak, by patrzyła na szafkę z góry pod kątem (izometria)
+        camera.position.set(1000, 1000, 1500); 
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+
+        // Kontrolery (OrbitControls)
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; 
+        controls.dampingFactor = 0.05;
+
+        // Światła
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Miękkie światło rozproszone
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight.position.set(500, 1000, 500);
+        scene.add(directionalLight);
+
+        // Grupa trzymająca całą szafkę
+        const cabinetGroup = new THREE.Group();
+        scene.add(cabinetGroup);
+
+        // --- 2. DEFINICJA MATERIAŁU TECHNICZNEGO ---
+        // Półprzezroczysty materiał, aby widzieć kolizje i krawędzie
+        const boardMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0x90caf9, 
+            transparent: true, 
+            opacity: 0.6,
+            side: THREE.DoubleSide
+        });
+        
+        // Funkcja pomocnicza: tworzy formatkę wraz z wyrysowanymi czarnymi/ciemnymi krawędziami
+        function createBoard(w, h, d, x, y, z) {
+            // Główna bryła
+            const geometry = new THREE.BoxGeometry(w, h, d);
+            const mesh = new THREE.Mesh(geometry, boardMaterial);
+            mesh.position.set(x, y, z);
+            
+            // Krawędzie (Wireframe) uwydatniające formatkę
+            const edges = new THREE.EdgesGeometry(geometry);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x153a5b, linewidth: 2 }));
+            mesh.add(line); // Dodajemy krawędzie jako dziecko formatki
+            
+            return mesh;
+        }
+
+        // --- 3. LOGIKA BUDOWY SZAFKI ---
+        function updateCabinet() {
+            // Pobranie danych z formularza
+            const H = parseFloat(document.getElementById('hBox').value) || 0;
+            const W = parseFloat(document.getElementById('wBox').value) || 0;
+            const D = parseFloat(document.getElementById('dBox').value) || 0;
+            const T = parseFloat(document.getElementById('tBoard').value) || 0;
+            const kTyp = document.getElementById('kTyp').value;
+
+            // Czyszczenie poprzedniej szafki przed wygenerowaniem nowej
+            while(cabinetGroup.children.length > 0){ 
+                cabinetGroup.remove(cabinetGroup.children[0]); 
             }
-            split(type, partsCount, thickness = 18) {
-                this.splitType = type;
-                if (type === 'H') {
-                    let h = (this.height - ((partsCount - 1) * thickness)) / partsCount;
-                    for (let i = 0; i < partsCount; i++) 
-                        this.children.push(new SpaceNode(`${this.id}-H${i+1}`, this.x, this.y + i*(h + thickness), this.width, h));
-                } else if (type === 'V') {
-                    let w = (this.width - ((partsCount - 1) * thickness)) / partsCount;
-                    for (let i = 0; i < partsCount; i++) 
-                        this.children.push(new SpaceNode(`${this.id}-V${i+1}`, this.x + i*(w + thickness), this.y, w, this.height));
-                }
+
+            // Definicja zmiennych formatek
+            let leftSide, rightSide, topPanel, bottomPanel;
+
+            // Oś Y w Three.js rośnie w górę, środek ekranu to 0. 
+            // Aby szafka stała na "ziemi", dół szafki ustawiamy od ZERA w górę.
+            // X lewo/prawo. Z przód/tył.
+
+            if (kTyp === 'wpuszczane') {
+                // BOKI pełna wysokość, WIEŃCE wpuszczone między boki
+                
+                // Bok lewy
+                leftSide = createBoard(T, H, D,  -W/2 + T/2,  H/2,  0);
+                // Bok prawy
+                rightSide = createBoard(T, H, D,  W/2 - T/2,  H/2,  0);
+                
+                // Wieniec dolny
+                bottomPanel = createBoard(W - 2*T, T, D,  0,  T/2,  0);
+                // Wieniec górny
+                topPanel = createBoard(W - 2*T, T, D,  0,  H - T/2,  0);
+
+            } else { // nakladane
+                // WIEŃCE pełna szerokość, BOKI zamknięte między wieńcami
+                
+                // Wieniec dolny
+                bottomPanel = createBoard(W, T, D,  0,  T/2,  0);
+                // Wieniec górny
+                topPanel = createBoard(W, T, D,  0,  H - T/2,  0);
+                
+                // Bok lewy
+                leftSide = createBoard(T, H - 2*T, D,  -W/2 + T/2,  H/2,  0);
+                // Bok prawy
+                rightSide = createBoard(T, H - 2*T, D,  W/2 - T/2,  H/2,  0);
             }
+
+            // Dodanie elementów do grupy szafki
+            cabinetGroup.add(leftSide);
+            cabinetGroup.add(rightSide);
+            cabinetGroup.add(bottomPanel);
+            cabinetGroup.add(topPanel);
         }
 
-        let rootNode = new SpaceNode('Szafa', 0, 0, 1200, 2460);
-        rootNode.split('H', 2);
-        rootNode.children[0].height = 460;
-        rootNode.children[1].height = 2460 - 460 - 18;
-        rootNode.children[1].y = 478;
-
-        // Funkcja znajdująca komorę w "drzewie"
-        function findNode(node, id) {
-            if (node.id === id) return node;
-            for (let child of node.children) {
-                let found = findNode(child, id);
-                if (found) return found;
-            }
-            return null;
+        // --- 4. PĘTLA ANIMACJI (RENDER) ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update(); // Wymagane dla gładkiego obracania
+            renderer.render(scene, camera);
         }
 
-        function selectSpace(id) {
-            let node = findNode(rootNode, id);
-            let panel = document.getElementById('controlPanel');
-            panel.innerHTML = `
-                <h2>Edycja: ${id}</h2>
-                <p>Szerokość: ${node.width.toFixed(1)} mm</p>
-                <p>Wysokość: ${node.height.toFixed(1)} mm</p>
-                <button class="btn-action" onclick="applySplit('${id}', 'H', 2)">Podziel Poziomo (Półki)</button>
-                <button class="btn-action" onclick="applySplit('${id}', 'V', 2)">Podziel Pionowo (Przegroda)</button>
-                <button class="btn-action" style="background:#d32f2f" onclick="location.reload()">Reset Szafy</button>
-            `;
-        }
+        // Aktualizacja rozmiaru okna
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
 
-        function applySplit(id, type, count) {
-            let node = findNode(rootNode, id);
-            node.split(type, count);
-            renderCAD();
-            selectSpace(id);
-        }
+        // Start aplikacji
+        updateCabinet();
+        animate();
 
-        function drawRecursive(node) {
-            let svg = '';
-            if (node.children.length === 0) {
-                svg += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" 
-                        fill="#e8f0fe" stroke="#1F4E79" stroke-width="2" style="cursor:pointer;" 
-                        onclick="selectSpace('${node.id}')" />`;
-            } else {
-                node.children.forEach(child => svg += drawRecursive(child));
-                for (let i = 0; i < node.children.length - 1; i++) {
-                    let c = node.children[i];
-                    if (node.splitType === 'H') svg += `<rect x="${node.x}" y="${c.y + c.height}" width="${node.width}" height="18" fill="#2e7d32" />`;
-                    else svg += `<rect x="${c.x + c.width}" y="${node.y}" width="18" height="${node.height}" fill="#2e7d32" />`;
-                }
-            }
-            return svg;
-        }
-
-        function renderCAD() {
-            document.getElementById('svgWrapper').innerHTML = 
-                `<svg viewBox="-20 -20 1240 2500" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">${drawRecursive(rootNode)}</svg>`;
-        }
-        renderCAD();
     </script>
 </body>
 </html>
