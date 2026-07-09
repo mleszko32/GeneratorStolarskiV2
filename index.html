@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Stolarski 3D - Wersja 2.4 (Poprawka Pustki)</title>
+    <title>Generator Stolarski 3D - Wersja 3.0 (Wnętrze i Półki)</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; display: flex; flex-wrap: wrap; gap: 20px; }
         .panel-left { flex: 1; min-width: 340px; max-width: 420px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; overflow-y: auto; height: calc(100vh - 40px); box-sizing: border-box; }
@@ -55,6 +55,13 @@
             </div>
         </div>
 
+        <h3>Wnętrze (Półki)</h3>
+        <div class="grid-2col">
+            <div><label>Ilość półek</label><input type="number" value="2" min="0" max="10" oninput="updateConfig('shelfCount', this.value)"></div>
+            <div><label>Cofnięcie (od frontu)</label><input type="number" value="15" oninput="updateConfig('shelfFrontClearance', this.value)"></div>
+            <div><label>Luz boczny (na stronę)</label><input type="number" value="1" oninput="updateConfig('shelfSideClearance', this.value)"></div>
+        </div>
+
         <div id="inspector">
             <h4>Edycja: <span id="ins_name">-</span></h4>
             <p style="margin:2px 0 10px 0; font-size: 0.85rem; color: #555;" id="ins_dim">-</p>
@@ -77,7 +84,9 @@
             config: { 
                 topMode: 'wieniec', 
                 traverseWidth: 80,
-                backType: 'nut', hdfThickness: 3, nutOffset: 15
+                backType: 'nut', hdfThickness: 3, nutOffset: 15,
+                // Ustawienia półek
+                shelfCount: 2, shelfSideClearance: 1, shelfFrontClearance: 15
             },
             parts: {
                 leftSide:  { id: 'leftSide', name: 'Bok Lewy', material: 'korpus', active: true, toFloor: false, w:0, h:0, d:0, x:0, y:0, z:0 },
@@ -89,6 +98,7 @@
                 travBack:  { id: 'travBack', name: 'Trawers Tył', material: 'trawers', active: false, orient: 'poziom', leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', w:0, h:0, d:0, x:0, y:0, z:0 },
                 
                 back:      { id: 'back', name: 'Plecy HDF', material: 'hdf', active: true, w:0, h:0, d:0, x:0, y:0, z:0 }
+                // Półki będą dodawane dynamicznie jako shelf_0, shelf_1...
             }
         };
 
@@ -96,59 +106,47 @@
             'korpus': new THREE.MeshLambertMaterial({ color: 0x90caf9, transparent: true, opacity: 0.6 }),
             'trawers': new THREE.MeshLambertMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.8 }),
             'hdf': new THREE.MeshLambertMaterial({ color: 0xffcc80, transparent: true, opacity: 0.7 }),
-            'selected': new THREE.MeshLambertMaterial({ color: 0xffeb3b })
+            'polka': new THREE.MeshLambertMaterial({ color: 0x81c784, transparent: true, opacity: 0.75 }), // Kolor półek
+            'selected': new THREE.MeshLambertMaterial({ color: 0xffeb3b, transparent: false })
         };
 
         // --- 2. ZAAWANSOWANY SILNIK REGUŁ ---
         function recalculateGeometry() {
             const g = state.global; const c = state.config; const p = state.parts;
             
+            // Wieniec Dolny
             let botLeftX = (p.bottom.leftJoint === 'nakladany') ? -g.width/2 : -g.width/2 + g.thickness;
             let botRightX = (p.bottom.rightJoint === 'nakladany') ? g.width/2 : g.width/2 - g.thickness;
             p.bottom.w = botRightX - botLeftX;
-            p.bottom.h = g.thickness;
-            p.bottom.d = g.depth;
-            p.bottom.x = botLeftX + (p.bottom.w / 2);
-            p.bottom.y = g.baseHeight + g.thickness/2;
-            p.bottom.z = 0;
+            p.bottom.h = g.thickness; p.bottom.d = g.depth;
+            p.bottom.x = botLeftX + (p.bottom.w / 2); p.bottom.y = g.baseHeight + g.thickness/2; p.bottom.z = 0;
 
-            if (c.topMode === 'wieniec') {
-                p.top.active = true;
-                p.travFront.active = false;
-                p.travBack.active = false;
-            } else {
-                p.top.active = false;
-            }
+            // Tryb Góry
+            if (c.topMode === 'wieniec') { p.top.active = true; p.travFront.active = false; p.travBack.active = false; } 
+            else { p.top.active = false; }
             
+            // Wieniec Górny
             let topCabinetY = g.baseHeight + g.height;
             let topLeftX = (p.top.leftJoint === 'nakladany') ? -g.width/2 : -g.width/2 + g.thickness;
             let topRightX = (p.top.rightJoint === 'nakladany') ? g.width/2 : g.width/2 - g.thickness;
             
-            p.top.w = topRightX - topLeftX;
-            p.top.h = g.thickness;
-            p.top.d = g.depth - p.top.frontOffset; 
-            p.top.x = topLeftX + (p.top.w / 2);
-            p.top.y = topCabinetY - g.thickness/2;
-            p.top.z = -p.top.frontOffset / 2; 
+            p.top.w = topRightX - topLeftX; p.top.h = g.thickness; p.top.d = g.depth - p.top.frontOffset; 
+            p.top.x = topLeftX + (p.top.w / 2); p.top.y = topCabinetY - g.thickness/2; p.top.z = -p.top.frontOffset / 2; 
 
+            // Trawersy
             [p.travFront, p.travBack].forEach(trav => {
                 let tLeftX = (trav.leftJoint === 'nakladany') ? -g.width/2 : -g.width/2 + g.thickness;
                 let tRightX = (trav.rightJoint === 'nakladany') ? g.width/2 : g.width/2 - g.thickness;
                 trav.w = tRightX - tLeftX;
                 trav.h = (trav.orient === 'poziom') ? g.thickness : c.traverseWidth;
                 trav.d = (trav.orient === 'poziom') ? c.traverseWidth : g.thickness;
-                trav.x = tLeftX + (trav.w / 2);
-                trav.y = topCabinetY - trav.h/2;
+                trav.x = tLeftX + (trav.w / 2); trav.y = topCabinetY - trav.h/2;
             });
-            
             p.travFront.z = g.depth/2 - p.travFront.d/2 - p.travFront.frontOffset; 
+            if (c.backType === 'nut') { p.travBack.z = -g.depth/2 + c.nutOffset + c.hdfThickness + p.travBack.d/2; } 
+            else { p.travBack.z = -g.depth/2 + p.travBack.d/2; }
 
-            if (c.backType === 'nut') {
-                p.travBack.z = -g.depth/2 + c.nutOffset + c.hdfThickness + p.travBack.d/2;
-            } else {
-                p.travBack.z = -g.depth/2 + p.travBack.d/2;
-            }
-
+            // Boki
             const calcSide = (sideKey, jointBot, jointTop) => {
                 let side = p[sideKey];
                 let bottomY = side.toFloor ? 0 : g.baseHeight;
@@ -158,26 +156,19 @@
                 if (c.topMode === 'wieniec' && jointTop === 'nakladany') topY -= g.thickness;
                 if (c.topMode === 'trawersy') {
                     let maxDrop = 0;
-                    if (p.travFront.active && p.travFront[sideKey === 'leftSide' ? 'leftJoint' : 'rightJoint'] === 'nakladany') {
-                        maxDrop = Math.max(maxDrop, p.travFront.h);
-                    }
-                    if (p.travBack.active && p.travBack[sideKey === 'leftSide' ? 'leftJoint' : 'rightJoint'] === 'nakladany') {
-                        maxDrop = Math.max(maxDrop, p.travBack.h);
-                    }
+                    if (p.travFront.active && p.travFront[sideKey === 'leftSide' ? 'leftJoint' : 'rightJoint'] === 'nakladany') maxDrop = Math.max(maxDrop, p.travFront.h);
+                    if (p.travBack.active && p.travBack[sideKey === 'leftSide' ? 'leftJoint' : 'rightJoint'] === 'nakladany') maxDrop = Math.max(maxDrop, p.travBack.h);
                     topY -= maxDrop;
                 }
 
-                side.w = g.thickness;
-                side.h = topY - bottomY;
-                side.d = g.depth;
+                side.w = g.thickness; side.h = topY - bottomY; side.d = g.depth;
                 side.x = (sideKey === 'leftSide') ? (-g.width/2 + g.thickness/2) : (g.width/2 - g.thickness/2);
-                side.y = bottomY + side.h/2;
-                side.z = 0;
+                side.y = bottomY + side.h/2; side.z = 0;
             };
-
             calcSide('leftSide', p.bottom.leftJoint, p.top.leftJoint);
             calcSide('rightSide', p.bottom.rightJoint, p.top.rightJoint);
 
+            // Plecy
             p.back.active = (c.backType !== 'brak');
             if (c.backType === 'nut') {
                 let hdfH = g.height - (2 * g.thickness);
@@ -185,10 +176,44 @@
                 p.back.x = 0; p.back.y = g.baseHeight + g.thickness + hdfH/2;
                 p.back.z = -g.depth/2 + c.nutOffset + c.hdfThickness/2;
             } else if (c.backType === 'nakladane') {
-                let hdfH = g.height;
-                p.back.w = g.width; p.back.h = hdfH; p.back.d = c.hdfThickness;
-                p.back.x = 0; p.back.y = g.baseHeight + hdfH/2;
-                p.back.z = -g.depth/2 - c.hdfThickness/2;
+                let hdfH = g.height; p.back.w = g.width; p.back.h = hdfH; p.back.d = c.hdfThickness;
+                p.back.x = 0; p.back.y = g.baseHeight + hdfH/2; p.back.z = -g.depth/2 - c.hdfThickness/2;
+            }
+
+            // --- 7. OBLICZENIA DLA PÓŁEK ---
+            let floorY = p.bottom.y + p.bottom.h/2;
+            let ceilY = g.baseHeight + g.height - g.thickness; // Przybliżony szczyt światła szafki
+            let availableH = ceilY - floorY;
+            let stepY = availableH / (c.shelfCount + 1);
+
+            // Obliczanie szerokości (odległość między wewnętrznymi ścianami boków)
+            let leftInnerX = p.leftSide.x + p.leftSide.w/2;
+            let rightInnerX = p.rightSide.x - p.rightSide.w/2;
+            let shelfW = (rightInnerX - leftInnerX) - (2 * c.shelfSideClearance);
+            let shelfX = (leftInnerX + rightInnerX) / 2;
+
+            // Obliczanie głębokości i osi Z
+            let frontLimitZ = g.depth/2 - c.shelfFrontClearance;
+            let backLimitZ = -g.depth/2;
+            if (c.backType === 'nut') backLimitZ = -g.depth/2 + c.nutOffset + c.hdfThickness + 2; // 2mm luzu od HDF
+            else if (c.backType === 'nakladane') backLimitZ = -g.depth/2 + 2;
+            
+            let shelfD = frontLimitZ - backLimitZ;
+            let shelfZ = (frontLimitZ + backLimitZ) / 2;
+
+            // Generowanie półek (wsparcie do 10 sztuk, reszta usypiana)
+            for (let i = 0; i < 10; i++) {
+                let sId = 'shelf_' + i;
+                if (i < c.shelfCount) {
+                    if (!p[sId]) {
+                        p[sId] = { id: sId, name: 'Półka ' + (i+1), material: 'polka', active: true, toFloor: false, w:0, h:0, d:0, x:0, y:0, z:0 };
+                    }
+                    p[sId].active = true;
+                    p[sId].w = shelfW; p[sId].h = g.thickness; p[sId].d = shelfD;
+                    p[sId].x = shelfX; p[sId].y = floorY + stepY * (i + 1); p[sId].z = shelfZ;
+                } else {
+                    if (p[sId]) p[sId].active = false;
+                }
             }
         }
 
@@ -245,15 +270,16 @@
 
         function updateGlobal(param, value) { state.global[param] = parseFloat(value) || 0; updateScene(); }
         function updateConfig(param, value) { 
-            state.config[param] = (param === 'traverseWidth' || param === 'nutOffset') ? parseFloat(value) : value; 
-            
-            // Wymuszamy przywrócenie trawersów przy resecie z menu głównego
-            if (param === 'topMode' && value === 'trawersy') {
-                state.parts.travFront.active = true;
-                state.parts.travBack.active = true;
+            // Parsowanie zmiennych liczbowych dla półek
+            if (['traverseWidth', 'nutOffset', 'shelfCount', 'shelfSideClearance', 'shelfFrontClearance'].includes(param)) {
+                state.config[param] = parseFloat(value) || 0; 
+            } else {
+                state.config[param] = value; 
             }
             
-            // Zamykamy inspektora, jeśli wyłączyliśmy aktywny element globalnie
+            if (param === 'topMode' && value === 'trawersy') {
+                state.parts.travFront.active = true; state.parts.travBack.active = true;
+            }
             if (selectedPartId === 'back' && param === 'backType' && value === 'brak') hideInspector();
             if ((selectedPartId === 'top' || selectedPartId === 'travFront' || selectedPartId === 'travBack') && param === 'topMode') hideInspector();
             
@@ -263,13 +289,8 @@
             if (value === 'true') value = true;
             if (value === 'false') value = false;
             if (param === 'frontOffset') value = parseFloat(value) || 0;
-            
-            state.parts[id][param] = value;
-            updateScene();
-            
-            // Jeśli element został właśnie wyłączony (trawers), zamknij jego inspektor
-            if (param === 'active' && value === false) hideInspector();
-            else buildInspectorContent(id);
+            state.parts[id][param] = value; updateScene();
+            if (param === 'active' && value === false) hideInspector(); else buildInspectorContent(id);
         }
 
         function updateCutList() {
@@ -298,19 +319,14 @@
             for (let i = 0; i < intersects.length; i++) {
                 let obj = intersects[i].object;
                 while (obj && (!obj.userData || !obj.userData.isPart)) obj = obj.parent;
-                if (obj && obj.userData.isPart && obj.visible) {
-                    validObject = obj;
-                    break;
-                }
+                if (obj && obj.userData.isPart && obj.visible) { validObject = obj; break; }
             }
 
             if (validObject) {
                 selectedPartId = validObject.userData.id;
                 sceneParts[selectedPartId].select();
                 buildInspectorContent(selectedPartId);
-            } else {
-                hideInspector();
-            }
+            } else { hideInspector(); }
         });
 
         function buildInspectorContent(id) {
@@ -322,94 +338,25 @@
             let html = '';
             
             if (id === 'leftSide' || id === 'rightSide') {
-                html += `
-                    <label>Styk z podłogą:</label>
-                    <select onchange="updatePart('${id}', 'toFloor', this.value)">
-                        <option value="false" ${!part.toFloor?'selected':''}>Na cokole / nóżkach</option>
-                        <option value="true" ${part.toFloor?'selected':''}>Bok schodzi do ziemi</option>
-                    </select>
-                `;
+                html += `<label>Styk z podłogą:</label><select onchange="updatePart('${id}', 'toFloor', this.value)"><option value="false" ${!part.toFloor?'selected':''}>Na cokole / nóżkach</option><option value="true" ${part.toFloor?'selected':''}>Bok schodzi do ziemi</option></select>`;
             }
             else if (id === 'bottom' || id === 'top') {
                 if (id === 'top') {
-                    html += `
-                        <label>Skrócenie od frontu (mm):</label>
-                        <input type="number" value="${part.frontOffset}" oninput="updatePart('${id}', 'frontOffset', this.value)">
-                        <hr style="border:0; border-top:1px solid #90caf9; margin:10px 0;">
-                    `;
+                    html += `<label>Skrócenie od frontu (mm):</label><input type="number" value="${part.frontOffset}" oninput="updatePart('${id}', 'frontOffset', this.value)"><hr style="border:0; border-top:1px solid #90caf9; margin:10px 0;">`;
                 }
-                html += `
-                    <div style="display:flex; gap: 10px;">
-                        <div style="flex:1">
-                            <label>Lewy styk:</label>
-                            <select onchange="updatePart('${id}', 'leftJoint', this.value)">
-                                <option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option>
-                                <option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option>
-                            </select>
-                        </div>
-                        <div style="flex:1">
-                            <label>Prawy styk:</label>
-                            <select onchange="updatePart('${id}', 'rightJoint', this.value)">
-                                <option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option>
-                                <option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option>
-                            </select>
-                        </div>
-                    </div>
-                `;
+                html += `<div style="display:flex; gap: 10px;"><div style="flex:1"><label>Lewy styk:</label><select onchange="updatePart('${id}', 'leftJoint', this.value)"><option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option></select></div><div style="flex:1"><label>Prawy styk:</label><select onchange="updatePart('${id}', 'rightJoint', this.value)"><option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option></select></div></div>`;
             }
             else if (id === 'travFront' || id === 'travBack') {
-                html += `
-                    <div style="margin-bottom: 10px;">
-                        <label style="color: #d32f2f;">Status elementu:</label>
-                        <select onchange="updatePart('${id}', 'active', this.value)">
-                            <option value="true" ${part.active?'selected':''}>Włączony</option>
-                            <option value="false" ${!part.active?'selected':''}>Wyłącz / Usuń</option>
-                        </select>
-                        
-                        <label>Ułożenie:</label>
-                        <select onchange="updatePart('${id}', 'orient', this.value)">
-                            <option value="poziom" ${part.orient==='poziom'?'selected':''}>Na płasko (Poziom)</option>
-                            <option value="pion" ${part.orient==='pion'?'selected':''}>Na sztorc (Pion)</option>
-                        </select>
-                        
-                        <label>Szerokość trawersów:</label>
-                        <input type="number" value="${c.traverseWidth}" oninput="updateConfig('traverseWidth', this.value)">
-                    </div>
-                `;
-                
-                if (id === 'travFront') {
-                    html += `
-                        <label>Odsunięcie od frontu (mm):</label>
-                        <input type="number" value="${part.frontOffset}" oninput="updatePart('${id}', 'frontOffset', this.value)" style="margin-bottom: 10px;">
-                    `;
-                }
-
-                html += `
-                    <div style="display:flex; gap: 10px;">
-                        <div style="flex:1">
-                            <label>Lewy styk:</label>
-                            <select onchange="updatePart('${id}', 'leftJoint', this.value)">
-                                <option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option>
-                                <option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option>
-                            </select>
-                        </div>
-                        <div style="flex:1">
-                            <label>Prawy styk:</label>
-                            <select onchange="updatePart('${id}', 'rightJoint', this.value)">
-                                <option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option>
-                                <option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option>
-                            </select>
-                        </div>
-                    </div>
-                `;
+                html += `<div style="margin-bottom: 10px;"><label style="color: #d32f2f;">Status elementu:</label><select onchange="updatePart('${id}', 'active', this.value)"><option value="true" ${part.active?'selected':''}>Włączony</option><option value="false" ${!part.active?'selected':''}>Wyłącz / Usuń</option></select><label>Ułożenie:</label><select onchange="updatePart('${id}', 'orient', this.value)"><option value="poziom" ${part.orient==='poziom'?'selected':''}>Na płasko (Poziom)</option><option value="pion" ${part.orient==='pion'?'selected':''}>Na sztorc (Pion)</option></select></div>`;
+                if (id === 'travFront') html += `<label>Odsunięcie od frontu (mm):</label><input type="number" value="${part.frontOffset}" oninput="updatePart('${id}', 'frontOffset', this.value)" style="margin-bottom: 10px;">`;
+                html += `<div style="display:flex; gap: 10px;"><div style="flex:1"><label>Lewy styk:</label><select onchange="updatePart('${id}', 'leftJoint', this.value)"><option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option></select></div><div style="flex:1"><label>Prawy styk:</label><select onchange="updatePart('${id}', 'rightJoint', this.value)"><option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option></select></div></div>`;
             }
             else if (id === 'back') {
-                if(c.backType === 'nut') {
-                    html += `<label>Odsunięcie nutu (od krawędzi tyłu):</label>
-                             <input type="number" value="${c.nutOffset}" oninput="updateConfig('nutOffset', this.value)">`;
-                } else {
-                    html += `<p style="font-size:0.85rem; color:#666;">Plecy nakładane nie posiadają dodatkowych opcji offsetu.</p>`;
-                }
+                if(c.backType === 'nut') html += `<label>Odsunięcie nutu (od krawędzi tyłu):</label><input type="number" value="${c.nutOffset}" oninput="updateConfig('nutOffset', this.value)">`;
+                else html += `<p style="font-size:0.85rem; color:#666;">Plecy nakładane nie posiadają dodatkowych opcji offsetu.</p>`;
+            }
+            else if (id.startsWith('shelf_')) {
+                html += `<p style="font-size:0.85rem; color:#666;">Ta półka jest generowana automatycznie. Możesz zmienić globalne ustawienia luzów i ilości po lewej stronie.</p>`;
             }
             document.getElementById('ins_options').innerHTML = html;
         }
