@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Stolarski 3D - V4.5 (Kolory Półek)</title>
+    <title>Generator Stolarski 3D - V5.0 (Produkcja & Rysunki 2D)</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; display: flex; flex-wrap: wrap; gap: 20px; }
         .panel-left { flex: 1; min-width: 360px; max-width: 440px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; overflow-y: auto; height: calc(100vh - 40px); box-sizing: border-box; }
         .panel-right { flex: 3; min-width: 400px; height: calc(100vh - 40px); background: #e8ebed; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #ccc; }
         
-        h2, h3 { color: #1F4E79; margin-top: 0; }
-        h2 { font-size: 1.2rem; border-bottom: 2px solid #E2EFDA; padding-bottom: 8px; margin-bottom: 15px; }
-        h3 { font-size: 1rem; margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        h2 { font-size: 1.2rem; color: #1F4E79; border-bottom: 2px solid #E2EFDA; padding-bottom: 8px; margin: 0 0 15px 0; }
+        h3 { font-size: 1rem; color: #1F4E79; margin: 20px 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         
         .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         label { display: block; font-size: 0.85rem; font-weight: bold; margin-top: 8px; margin-bottom: 4px; color: #555; }
@@ -34,16 +33,26 @@
         
         .btn-action { width: 100%; padding: 8px; margin-top: 5px; background: #e0e0e0; }
         .btn-action:hover { background: #d5d5d5; }
+        .btn-draw { background: #1565c0; color: white; margin-top: 10px; }
+        .btn-draw:hover { background: #0d47a1; }
         
         #inspector { background: #e3f2fd; padding: 15px; border-radius: 6px; border: 1px solid #90caf9; margin-top: 15px; display: none; }
         #inspector h4 { margin: 0 0 10px 0; color: #1565c0; font-size: 1.05rem; border-bottom: 1px solid #90caf9; padding-bottom: 5px; }
+        
         .cut-list { font-size: 0.85rem; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #ddd; }
         .cut-list table { width: 100%; border-collapse: collapse; }
         .cut-list th, .cut-list td { padding: 4px; text-align: left; border-bottom: 1px solid #eee; }
+        
         .instructions { position: absolute; bottom: 15px; left: 15px; background: rgba(255,255,255,0.85); padding: 10px; border-radius: 6px; font-size: 0.8rem; color: #333; pointer-events: none; border: 1px solid #ddd; z-index: 10; }
         #error-overlay { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(211, 47, 47, 0.9); color: white; padding: 15px; border-radius: 6px; display: none; z-index: 1000; font-weight: bold; }
-        
         #canvas-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+
+        /* Nakładka Rysunku 2D */
+        #drawing-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px; }
+        #drawing-container { background: white; width: 100%; max-width: 900px; height: 90vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
+        #drawing-header { padding: 15px; background: #1F4E79; color: white; display: flex; justify-content: space-between; align-items: center; }
+        #drawing-content { flex: 1; overflow: auto; padding: 20px; display: flex; justify-content: center; align-items: center; background: #f0f0f0; }
+        #drawing-svg { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #ccc; }
     </style>
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -53,10 +62,10 @@
     <div class="panel-left">
         <h2>Gabaryty KORPUSU</h2>
         <div class="grid-2col">
-            <div><label>Wysokość korpusu</label><input type="number" id="g_height" value="720" oninput="updateGlobal('height', this.value)"></div>
-            <div><label>Szerokość całk.</label><input type="number" id="g_width" value="600" oninput="updateGlobal('width', this.value)"></div>
-            <div><label>Głębokość (D)</label><input type="number" id="g_depth" value="510" oninput="updateGlobal('depth', this.value)"></div>
-            <div><label>Grubość płyty</label><input type="number" id="g_thickness" value="18" oninput="updateGlobal('thickness', this.value)"></div>
+            <div><label>Wysokość korpusu</label><input type="number" value="720" oninput="updateGlobal('height', this.value)"></div>
+            <div><label>Szerokość całk.</label><input type="number" value="600" oninput="updateGlobal('width', this.value)"></div>
+            <div><label>Głębokość (D)</label><input type="number" value="510" oninput="updateGlobal('depth', this.value)"></div>
+            <div><label>Grubość płyty</label><input type="number" value="18" oninput="updateGlobal('thickness', this.value)"></div>
             <div><label>Wysokość cokołu</label><input type="number" value="100" oninput="updateGlobal('baseHeight', this.value)"></div>
         </div>
 
@@ -82,8 +91,28 @@
             <div><label>Cofnięcie od frontu</label><input type="number" value="5" oninput="updateConfig('shelfFrontClearance', this.value)"></div>
             <div><label>Luz boczny (Ruchoma)</label><input type="number" value="0" oninput="updateConfig('shelfSideClearance', this.value)"></div>
         </div>
-        
         <div class="interior-manager" id="interiorUI"></div>
+
+        <h3>Technologia (CNC / Nawierty)</h3>
+        <div class="grid-2col">
+            <div><label>Typ połączeń</label>
+                <select onchange="updateConfig('jointType', this.value)">
+                    <option value="kolek_wkret">Kołek + Wkręt</option>
+                    <option value="konfirmat">Konfirmat</option>
+                </select>
+            </div>
+            <div><label>Zawiasy (Prowadniki)</label>
+                <select onchange="updateConfig('hingeSide', this.value)">
+                    <option value="none">Brak frontów</option>
+                    <option value="leftSide">Na lewym boku</option>
+                    <option value="rightSide">Na prawym boku</option>
+                </select>
+            </div>
+            <div class="grid-full">
+                <button class="btn-action btn-draw" onclick="openDrawing('leftSide')">📄 Rysunek 2D: Bok Lewy</button>
+                <button class="btn-action btn-draw" onclick="openDrawing('rightSide')" style="margin-top: 5px;">📄 Rysunek 2D: Bok Prawy</button>
+            </div>
+        </div>
 
         <div id="inspector">
             <h4>Edycja: <span id="ins_name">-</span></h4>
@@ -101,6 +130,18 @@
         <div class="instructions">Lewy klik: <b>Zaznacz detal w Inspektorze</b> | Prawy klik: <b>Przesuń</b> | Scroll: <b>Zoom</b></div>
     </div>
 
+    <div id="drawing-overlay">
+        <div id="drawing-container">
+            <div id="drawing-header">
+                <h3 style="margin:0; color:white;" id="drawing-title">Rysunek Techniczny</h3>
+                <button onclick="document.getElementById('drawing-overlay').style.display='none'" style="padding: 5px 15px; background:#d32f2f; color:white;">Zamknij X</button>
+            </div>
+            <div id="drawing-content">
+                <svg id="drawing-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+            </div>
+        </div>
+    </div>
+
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             document.getElementById('error-overlay').style.display = 'block';
@@ -112,19 +153,21 @@
             config: { 
                 topMode: 'wieniec', traverseWidth: 80,
                 backType: 'nut', hdfThickness: 3, nutOffset: 15,
-                shelfSideClearance: 0, shelfFrontClearance: 5
+                shelfSideClearance: 0, shelfFrontClearance: 5,
+                // NOWE USTAWIENIA TECHNOLOGICZNE
+                jointType: 'kolek_wkret', hingeSide: 'none', hingeOffset: 100
             },
             interior: {
                 spaces: [ { id: 'sp_1', locked: false, val: 0 }, { id: 'sp_2', locked: false, val: 0 }, { id: 'sp_3', locked: false, val: 0 } ],
                 shelves: [ { id: 'sh_1', isFixed: false }, { id: 'sh_2', isFixed: false } ]
             },
             parts: {
-                leftSide:  { id: 'leftSide', name: 'Bok Lewy', material: 'korpus', active: true, toFloor: false, w:0, h:0, d:0, x:0, y:0, z:0 },
-                rightSide: { id: 'rightSide', name: 'Bok Prawy', material: 'korpus', active: true, toFloor: false, w:0, h:0, d:0, x:0, y:0, z:0 },
-                bottom:    { id: 'bottom', name: 'Wieniec Dolny', material: 'korpus', active: true, leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', w:0, h:0, d:0, x:0, y:0, z:0 },
-                top:       { id: 'top', name: 'Wieniec Górny', material: 'korpus', active: true, leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', frontOffset: 0, w:0, h:0, d:0, x:0, y:0, z:0 },
-                travFront: { id: 'travFront', name: 'Trawers Przód', material: 'trawers', active: false, orient: 'poziom', leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', frontOffset: 0, w:0, h:0, d:0, x:0, y:0, z:0 },
-                travBack:  { id: 'travBack', name: 'Trawers Tył', material: 'trawers', active: false, orient: 'poziom', leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', w:0, h:0, d:0, x:0, y:0, z:0 },
+                leftSide:  { id: 'leftSide', name: 'Bok Lewy', material: 'korpus', active: true, toFloor: false, drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 },
+                rightSide: { id: 'rightSide', name: 'Bok Prawy', material: 'korpus', active: true, toFloor: false, drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 },
+                bottom:    { id: 'bottom', name: 'Wieniec Dolny', material: 'korpus', active: true, leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 },
+                top:       { id: 'top', name: 'Wieniec Górny', material: 'korpus', active: true, leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', frontOffset: 0, drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 },
+                travFront: { id: 'travFront', name: 'Trawers Przód', material: 'trawers', active: false, orient: 'poziom', leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', frontOffset: 0, drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 },
+                travBack:  { id: 'travBack', name: 'Trawers Tył', material: 'trawers', active: false, orient: 'poziom', leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 },
                 back:      { id: 'back', name: 'Plecy HDF', material: 'hdf', active: true, w:0, h:0, d:0, x:0, y:0, z:0 }
             }
         };
@@ -133,14 +176,19 @@
             'korpus': new THREE.MeshLambertMaterial({ color: 0x90caf9, transparent: true, opacity: 0.6 }),
             'trawers': new THREE.MeshLambertMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.8 }),
             'hdf': new THREE.MeshLambertMaterial({ color: 0xffcc80, transparent: true, opacity: 0.7 }),
-            'polkaStal': new THREE.MeshLambertMaterial({ color: 0x2e7d32, transparent: true, opacity: 0.85 }), // Ciemnozielony
-            'polkaRuch': new THREE.MeshLambertMaterial({ color: 0x64b5f6, transparent: true, opacity: 0.75 }), // Niebieski (Ruchoma)
+            'polkaStal': new THREE.MeshLambertMaterial({ color: 0x2e7d32, transparent: true, opacity: 0.85 }),
+            'polkaRuch': new THREE.MeshLambertMaterial({ color: 0x64b5f6, transparent: true, opacity: 0.75 }),
             'selected': new THREE.MeshLambertMaterial({ color: 0xffeb3b, transparent: false })
         };
 
+        // --- GŁÓWNY SILNIK GEOMETRII ---
         function recalculateGeometry() {
             const g = state.global; const c = state.config; const p = state.parts;
             
+            // Czyszczenie operacji
+            for(let key in p) { if(p[key].drillings) p[key].drillings = []; }
+
+            // 1. ZEWNĘTRZNA BRYŁA
             let botLeftX = (p.bottom.leftJoint === 'nakladany') ? -g.width/2 : -g.width/2 + g.thickness;
             let botRightX = (p.bottom.rightJoint === 'nakladany') ? g.width/2 : g.width/2 - g.thickness;
             p.bottom.w = Math.max(botRightX - botLeftX, 0); 
@@ -196,7 +244,7 @@
                 p.back.x = 0; p.back.y = g.baseHeight + hdfH/2; p.back.z = -g.depth/2 - c.hdfThickness/2;
             }
 
-            // --- LOGIKA KALKULATORA ŚWIATEŁ ---
+            // 2. WNĘTRZE
             let floorY = p.bottom.y + p.bottom.h/2; 
             let ceilY = topCabinetY;
             if(c.topMode === 'wieniec') ceilY -= g.thickness;
@@ -210,9 +258,7 @@
             let totalAvailableH = ceilY - floorY;
             let shelvesH = state.interior.shelves.length * g.thickness;
             let netSpaceH = Math.max(0, totalAvailableH - shelvesH);
-            
-            let lockedSum = 0; 
-            let unlockedCount = 0;
+            let lockedSum = 0; let unlockedCount = 0;
             
             state.interior.spaces.forEach(sp => {
                 if (sp.locked) {
@@ -256,9 +302,10 @@
                     let shelfData = state.interior.shelves[i];
                     let sId = 'shelf_' + i;
                     
-                    if (!p[sId]) p[sId] = { id: sId, active: true, w:0, h:0, d:0, x:0, y:0, z:0 };
+                    if (!p[sId]) p[sId] = { id: sId, active: true, drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 };
                     
                     p[sId].active = true;
+                    p[sId].drillings = []; // Reset nawiertów
                     p[sId].name = shelfData.isFixed ? `Półka Konstrukcyjna ${i+1}` : `Półka Ruchoma ${i+1}`;
                     p[sId].material = shelfData.isFixed ? 'polkaStal' : 'polkaRuch';
                     p[sId].h = g.thickness; 
@@ -273,6 +320,165 @@
             }
         }
 
+        // --- SILNIK NAWIERTÓW (CNC) ---
+        function calculateDrillings() {
+            const g = state.global; const c = state.config; const p = state.parts;
+            
+            const addHole = (partId, x, y, r, label, color) => {
+                if (p[partId]) p[partId].drillings.push({ x: Math.round(x), y: Math.round(y), r, label, color });
+            };
+
+            // SYSTEM 32 - PÓŁKI
+            // Baza dla Boku to Y=0 jako dolna krawędź formatki boku.
+            // Baza dla Boku X=0 to przednia krawędź boku.
+            
+            let frontHoleX = 37;
+            let backHoleX = g.depth - 37;
+            
+            for(let key in p) {
+                if (key.startsWith('shelf_') && p[key].active) {
+                    let shelf = p[key];
+                    
+                    // Wyznaczamy środek grubości półki względem "zera" lewego boku
+                    let leftSideBottomY = p.leftSide.y - p.leftSide.h/2;
+                    let localShelfY = shelf.y - leftSideBottomY; 
+                    
+                    // Generujemy 3 otwory pod każdą półkę
+                    [-32, 0, 32].forEach(dy => {
+                        let isCenter = (dy === 0);
+                        let color = isCenter ? '#e65100' : '#4caf50'; // Środkowy otwór (baza) na pomarańczowo
+                        
+                        addHole('leftSide', frontHoleX, localShelfY + dy, 2.5, 'System 32', color);
+                        addHole('leftSide', backHoleX, localShelfY + dy, 2.5, 'System 32', color);
+                        addHole('rightSide', frontHoleX, localShelfY + dy, 2.5, 'System 32', color);
+                        addHole('rightSide', backHoleX, localShelfY + dy, 2.5, 'System 32', color);
+                    });
+                }
+            }
+
+            // ZAWIASY
+            if (c.hingeSide === 'leftSide' || c.hingeSide === 'rightSide') {
+                let sideId = c.hingeSide;
+                // Górny prowadnik
+                let hingeTopY = p[sideId].h - c.hingeOffset;
+                addHole(sideId, 37, hingeTopY + 16, 2.5, 'Prowadnik Zawiasu', '#1565c0');
+                addHole(sideId, 37, hingeTopY - 16, 2.5, 'Prowadnik Zawiasu', '#1565c0');
+                
+                // Dolny prowadnik
+                let hingeBotY = c.hingeOffset;
+                addHole(sideId, 37, hingeBotY + 16, 2.5, 'Prowadnik Zawiasu', '#1565c0');
+                addHole(sideId, 37, hingeBotY - 16, 2.5, 'Prowadnik Zawiasu', '#1565c0');
+            }
+
+            // ZŁĄCZA KONSTRUKCYJNE KORPUSU (Dół i Góra)
+            // Upraszczamy: Wiercimy 50mm od krawędzi przodu i tyłu
+            ['leftSide', 'rightSide'].forEach(sideId => {
+                let side = p[sideId];
+                let isLeft = (sideId === 'leftSide');
+                
+                // Dolny wieniec
+                if (p.bottom.active && p.bottom[isLeft ? 'leftJoint' : 'rightJoint'] === 'wpuszczany') {
+                    let localY = (p.bottom.y - p.bottom.h/2) - (side.y - side.h/2) + g.thickness/2;
+                    addHole(sideId, 50, localY, 4, 'Złącze Konstr.', '#d32f2f');
+                    addHole(sideId, g.depth - 50, localY, 4, 'Złącze Konstr.', '#d32f2f');
+                }
+                
+                // Górny wieniec
+                if (p.top.active && p.top[isLeft ? 'leftJoint' : 'rightJoint'] === 'wpuszczany') {
+                    let localY = (p.top.y - p.top.h/2) - (side.y - side.h/2) + g.thickness/2;
+                    addHole(sideId, 50, localY, 4, 'Złącze Konstr.', '#d32f2f');
+                    addHole(sideId, g.depth - 50, localY, 4, 'Złącze Konstr.', '#d32f2f');
+                }
+            });
+        }
+
+        // --- RYSUNEK 2D (SVG GENERATOR) ---
+        function openDrawing(partId) {
+            const part = state.parts[partId];
+            if (!part || !part.active) return alert("Ten element jest obecnie niewidoczny w projekcie.");
+            
+            document.getElementById('drawing-title').innerText = `Rysunek Techniczny: ${part.name} (${part.w.toFixed(0)} x ${part.h.toFixed(0)} x ${part.d.toFixed(0)} mm)`;
+            
+            const svg = document.getElementById('drawing-svg');
+            
+            // Konfiguracja SVG. Bok patrzymy z profilu, więc szerokość rysunku to głębokość (d), a wysokość to wysokość boku (h)
+            // Zakładamy, że X to głębokość, Y to wysokość. 
+            // Dodajemy marginesy (padding) na wymiary
+            const padding = 120;
+            const svgW = part.d + padding * 2;
+            const svgH = part.h + padding * 2;
+            
+            svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+            svg.innerHTML = ''; // Czyszczenie
+            
+            // Definiujemy przesuwanie współrzędnych do środka na marginesy
+            // SVG Y rośnie w dół. Nasze Y=0 to spód płyty. Musimy odwrócić Y!
+            const tX = (x) => padding + x;
+            const tY = (y) => padding + (part.h - y);
+
+            // Rysujemy Formatkę (Prostokąt)
+            let rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            rect.setAttribute("x", padding);
+            rect.setAttribute("y", padding);
+            rect.setAttribute("width", part.d);
+            rect.setAttribute("height", part.h);
+            rect.setAttribute("fill", "#f8f9fa");
+            rect.setAttribute("stroke", "#333");
+            rect.setAttribute("stroke-width", "2");
+            svg.appendChild(rect);
+            
+            // Rysujemy Linia Osi Y=0 (Baza)
+            let baseLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            baseLine.setAttribute("x1", padding - 80); baseLine.setAttribute("y1", tY(0));
+            baseLine.setAttribute("x2", padding + part.d + 80); baseLine.setAttribute("y2", tY(0));
+            baseLine.setAttribute("stroke", "#aaa"); baseLine.setAttribute("stroke-dasharray", "5,5");
+            svg.appendChild(baseLine);
+            
+            let baseText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            baseText.setAttribute("x", padding + part.d + 10); baseText.setAttribute("y", tY(0) + 4);
+            baseText.setAttribute("font-size", "12"); baseText.setAttribute("font-family", "sans-serif"); baseText.setAttribute("font-weight", "bold");
+            baseText.textContent = "0 mm (Baza)";
+            svg.appendChild(baseText);
+
+            // Rysowanie Nawiertów
+            // Grupujemy wymiary Y, żeby narysować wspólne linie
+            let uniqueYs = [...new Set(part.drillings.map(d => d.y))].sort((a,b) => a-b);
+            
+            uniqueYs.forEach(y => {
+                // Linia pomocnicza
+                let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", padding - 40); line.setAttribute("y1", tY(y));
+                line.setAttribute("x2", padding + part.d + 40); line.setAttribute("y2", tY(y));
+                line.setAttribute("stroke", "#e0e0e0");
+                svg.appendChild(line);
+                
+                // Tekst wymiaru (po lewej)
+                let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", padding - 45); text.setAttribute("y", tY(y) + 4);
+                text.setAttribute("font-size", "12"); text.setAttribute("font-family", "sans-serif"); text.setAttribute("text-anchor", "end");
+                text.textContent = y;
+                svg.appendChild(text);
+            });
+
+            // Fizyczne Dziury
+            part.drillings.forEach(d => {
+                let circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", tX(d.x));
+                circle.setAttribute("cy", tY(d.y));
+                circle.setAttribute("r", d.r * 1.5); // Powiększenie dla czytelności
+                circle.setAttribute("fill", d.color);
+                
+                let title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+                title.textContent = `${d.label} [X:${d.x}, Y:${d.y}]`;
+                circle.appendChild(title);
+                
+                svg.appendChild(circle);
+            });
+
+            document.getElementById('drawing-overlay').style.display = 'flex';
+        }
+
+        // --- UI INTERIOR MANAGER ---
         function renderInteriorUI() {
             let html = '';
             const spaces = state.interior.spaces;
@@ -286,63 +492,32 @@
                 let inputReadonly = isLastAuto ? 'readonly style="background:#e8ebed; border-color:transparent; color:#777;"' : '';
                 
                 let btnHtml = '';
-                if (sp.locked) {
-                    btnHtml = `<button class="btn-lock locked" onclick="toggleLock(${i})">Odblokuj</button>`;
-                } else {
-                    if (isLastAuto) {
-                        btnHtml = `<button class="btn-lock disabled-auto" disabled title="To światło wchłania resztę.">Auto (Reszta)</button>`;
-                    } else {
-                        btnHtml = `<button class="btn-lock unlocked" onclick="toggleLock(${i})">Zablokuj</button>`;
-                    }
+                if (sp.locked) { btnHtml = `<button class="btn-lock locked" onclick="toggleLock(${i})">Odblokuj</button>`; } 
+                else {
+                    if (isLastAuto) btnHtml = `<button class="btn-lock disabled-auto" disabled title="To światło wchłania resztę.">Auto (Reszta)</button>`;
+                    else btnHtml = `<button class="btn-lock unlocked" onclick="toggleLock(${i})">Zablokuj</button>`;
                 }
 
-                html += `
-                    <div class="space-block">
-                        <span style="font-size:0.85rem;">${label}:</span>
-                        <div>
-                            <input type="number" value="${sp.val}" ${inputReadonly} onchange="handleSpaceInput(${i}, this.value)">
-                            ${btnHtml}
-                        </div>
-                    </div>
-                `;
+                html += `<div class="space-block"><span style="font-size:0.85rem;">${label}:</span><div><input type="number" value="${sp.val}" ${inputReadonly} onchange="handleSpaceInput(${i}, this.value)"> ${btnHtml}</div></div>`;
                 
                 if (i > 0) {
                     let sh = shelves[i - 1];
-                    html += `
-                        <div class="shelf-divider">
-                            <button class="btn-shelf-type ${sh.isFixed ? 'type-fixed' : 'type-movable'}" onclick="toggleShelfType(${i-1})">
-                                ${sh.isFixed ? '✔ Półka Konstrukcyjna' : 'Półka Ruchoma (Luz)'}
-                            </button>
-                        </div>
-                    `;
+                    html += `<div class="shelf-divider"><button class="btn-shelf-type ${sh.isFixed ? 'type-fixed' : 'type-movable'}" onclick="toggleShelfType(${i-1})">${sh.isFixed ? '✔ Półka Konstrukcyjna' : 'Półka Ruchoma (Luz)'}</button></div>`;
                 }
             }
             
             html += `<button class="btn-action" onclick="addSpace()">+ Dodaj Moduł / Półkę</button>`;
-            if (spaces.length > 1) {
-                html += `<button class="btn-action" onclick="removeSpace()" style="margin-top:5px; background:#ffcdd2; color:#c62828;">- Usuń Moduł (Góra)</button>`;
-            }
-            
+            if (spaces.length > 1) { html += `<button class="btn-action" onclick="removeSpace()" style="margin-top:5px; background:#ffcdd2; color:#c62828;">- Usuń Moduł (Góra)</button>`; }
             document.getElementById('interiorUI').innerHTML = html;
         }
 
         function toggleLock(idx) { state.interior.spaces[idx].locked = !state.interior.spaces[idx].locked; updateScene(); }
-        function handleSpaceInput(idx, val) {
-            let v = parseFloat(val);
-            if(!isNaN(v)) { state.interior.spaces[idx].val = v; state.interior.spaces[idx].locked = true; updateScene(); }
-        }
+        function handleSpaceInput(idx, val) { let v = parseFloat(val); if(!isNaN(v)) { state.interior.spaces[idx].val = v; state.interior.spaces[idx].locked = true; updateScene(); } }
         function toggleShelfType(idx) { state.interior.shelves[idx].isFixed = !state.interior.shelves[idx].isFixed; updateScene(); }
-        
-        function addSpace() {
-            let nextId = state.interior.spaces.length + 1;
-            state.interior.spaces.push({ id: 'sp_'+nextId, locked: false, val: 0 });
-            state.interior.shelves.push({ id: 'sh_'+(nextId-1), isFixed: false });
-            updateScene();
-        }
-        function removeSpace() {
-            if (state.interior.spaces.length > 1) { state.interior.spaces.pop(); state.interior.shelves.pop(); updateScene(); }
-        }
+        function addSpace() { let nextId = state.interior.spaces.length + 1; state.interior.spaces.push({ id: 'sp_'+nextId, locked: false, val: 0 }); state.interior.shelves.push({ id: 'sh_'+(nextId-1), isFixed: false }); updateScene(); }
+        function removeSpace() { if (state.interior.spaces.length > 1) { state.interior.spaces.pop(); state.interior.shelves.pop(); updateScene(); } }
 
+        // --- KLASA 3D ---
         class CabinetPart {
             constructor(partData) {
                 this.id = partData.id;
@@ -359,8 +534,6 @@
             }
             update(partData) {
                 this.mesh.visible = partData.active;
-                
-                // Kluczowa poprawka: Dynamiczna zmiana materiału w locie
                 const correctMaterial = mats[partData.material];
                 if (this.baseMaterial !== correctMaterial) {
                     this.baseMaterial = correctMaterial;
@@ -382,8 +555,7 @@
         }
 
         const container = document.getElementById('canvas-container');
-        let startW = container.clientWidth || 800;
-        let startH = container.clientHeight || 600;
+        let startW = container.clientWidth || 800; let startH = container.clientHeight || 600;
         
         const scene = new THREE.Scene(); scene.background = new THREE.Color(0xe8ebed);
         const camera = new THREE.PerspectiveCamera(45, startW / startH, 1, 10000);
@@ -404,42 +576,34 @@
             try {
                 document.getElementById('error-overlay').style.display = 'none';
                 recalculateGeometry();
+                calculateDrillings(); // ODPALENIE SILNIKA NAWIERTÓW
                 
                 for (const key in state.parts) {
                     const data = state.parts[key];
                     if(data.active) {
-                        if (!sceneParts[key]) { 
-                            sceneParts[key] = new CabinetPart(data); 
-                            cabinetGroup.add(sceneParts[key].mesh); 
-                        }
+                        if (!sceneParts[key]) { sceneParts[key] = new CabinetPart(data); cabinetGroup.add(sceneParts[key].mesh); }
                         else { sceneParts[key].update(data); }
-                    } else if (sceneParts[key]) {
-                        sceneParts[key].update(data);
-                    }
+                    } else if (sceneParts[key]) { sceneParts[key].update(data); }
                 }
                 renderInteriorUI();
                 updateCutList();
                 if(selectedPartId && state.parts[selectedPartId] && state.parts[selectedPartId].active) refreshInspectorDimensions(selectedPartId);
                 else hideInspector();
-                
             } catch(e) {
-                console.error(e);
-                document.getElementById('error-overlay').style.display = 'block';
-                document.getElementById('error-overlay').innerHTML = `BŁĄD PRZELICZANIA: ${e.message}`;
+                console.error(e); document.getElementById('error-overlay').style.display = 'block'; document.getElementById('error-overlay').innerHTML = `BŁĄD PRZELICZANIA: ${e.message}`;
             }
         }
 
         function updateGlobal(param, value) { state.global[param] = parseFloat(value) || 0; updateScene(); }
         function updateConfig(param, value) { 
-            if (['traverseWidth', 'nutOffset', 'shelfSideClearance', 'shelfFrontClearance'].includes(param)) {
+            if (['traverseWidth', 'nutOffset', 'shelfSideClearance', 'shelfFrontClearance', 'hingeOffset'].includes(param)) {
                 state.config[param] = parseFloat(value) || 0; 
             } else { state.config[param] = value; }
             if (param === 'topMode' && value === 'trawersy') { state.parts.travFront.active = true; state.parts.travBack.active = true; }
             updateScene(); 
         }
         function updatePart(id, param, value) {
-            if (value === 'true') value = true;
-            if (value === 'false') value = false;
+            if (value === 'true') value = true; if (value === 'false') value = false;
             if (param === 'frontOffset') value = parseFloat(value) || 0;
             state.parts[id][param] = value; updateScene();
             if (param === 'active' && value === false) hideInspector(); else buildInspectorContent(id);
@@ -470,9 +634,7 @@
             for (let i = 0; i < intersects.length; i++) {
                 let obj = intersects[i].object;
                 while (obj && (!obj.userData || !obj.userData.isPart)) obj = obj.parent;
-                if (obj && obj.userData.isPart && obj.visible && !obj.userData.id.startsWith('shelf_')) { 
-                    validObject = obj; break; 
-                }
+                if (obj && obj.userData.isPart && obj.visible && !obj.userData.id.startsWith('shelf_')) { validObject = obj; break; }
             }
             if (validObject) {
                 selectedPartId = validObject.userData.id;
@@ -483,14 +645,11 @@
 
         function buildInspectorContent(id) {
             const part = state.parts[id]; const c = state.config;
-            document.getElementById('inspector').style.display = 'block';
-            document.getElementById('ins_name').innerText = part.name;
+            document.getElementById('inspector').style.display = 'block'; document.getElementById('ins_name').innerText = part.name;
             refreshInspectorDimensions(id);
             let html = '';
             
-            if (id === 'leftSide' || id === 'rightSide') {
-                html += `<label>Styk z podłogą:</label><select onchange="updatePart('${id}', 'toFloor', this.value)"><option value="false" ${!part.toFloor?'selected':''}>Na cokole / nóżkach</option><option value="true" ${part.toFloor?'selected':''}>Bok schodzi do ziemi</option></select>`;
-            }
+            if (id === 'leftSide' || id === 'rightSide') { html += `<label>Styk z podłogą:</label><select onchange="updatePart('${id}', 'toFloor', this.value)"><option value="false" ${!part.toFloor?'selected':''}>Na cokole / nóżkach</option><option value="true" ${part.toFloor?'selected':''}>Bok schodzi do ziemi</option></select>`; }
             else if (id === 'bottom' || id === 'top') {
                 if (id === 'top') { html += `<label>Skrócenie od frontu (mm):</label><input type="number" value="${part.frontOffset}" oninput="updatePart('${id}', 'frontOffset', this.value)"><hr style="border:0; border-top:1px solid #90caf9; margin:10px 0;">`; }
                 html += `<div style="display:flex; gap: 10px;"><div style="flex:1"><label>Lewy styk:</label><select onchange="updatePart('${id}', 'leftJoint', this.value)"><option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option></select></div><div style="flex:1"><label>Prawy styk:</label><select onchange="updatePart('${id}', 'rightJoint', this.value)"><option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option></select></div></div>`;
@@ -500,9 +659,7 @@
                 if (id === 'travFront') html += `<label>Odsunięcie od frontu (mm):</label><input type="number" value="${part.frontOffset}" oninput="updatePart('${id}', 'frontOffset', this.value)" style="margin-bottom: 10px;">`;
                 html += `<div style="display:flex; gap: 10px;"><div style="flex:1"><label>Lewy styk:</label><select onchange="updatePart('${id}', 'leftJoint', this.value)"><option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option></select></div><div style="flex:1"><label>Prawy styk:</label><select onchange="updatePart('${id}', 'rightJoint', this.value)"><option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option></select></div></div>`;
             }
-            else if (id === 'back') {
-                if(c.backType === 'nut') html += `<label>Odsunięcie nutu (od krawędzi tyłu):</label><input type="number" value="${c.nutOffset}" oninput="updateConfig('nutOffset', this.value)">`;
-            }
+            else if (id === 'back') { if(c.backType === 'nut') html += `<label>Odsunięcie nutu (od krawędzi tyłu):</label><input type="number" value="${c.nutOffset}" oninput="updateConfig('nutOffset', this.value)">`; }
             document.getElementById('ins_options').innerHTML = html;
         }
 
@@ -511,24 +668,16 @@
         
         function animate() { 
             requestAnimationFrame(animate); 
-            
-            const currW = container.clientWidth;
-            const currH = container.clientHeight;
+            const currW = container.clientWidth; const currH = container.clientHeight;
             if (currW > 0 && currH > 0 && (camera.aspect !== currW / currH || renderer.getSize(new THREE.Vector2()).width !== currW)) {
-                camera.aspect = currW / currH;
-                camera.updateProjectionMatrix();
-                renderer.setSize(currW, currH);
+                camera.aspect = currW / currH; camera.updateProjectionMatrix(); renderer.setSize(currW, currH);
             }
-            
-            if(controls) controls.update(); 
-            if(renderer && scene && camera) renderer.render(scene, camera); 
+            if(controls) controls.update(); if(renderer && scene && camera) renderer.render(scene, camera); 
         }
         
         window.addEventListener('resize', () => { 
             if(container.clientWidth > 0 && container.clientHeight > 0) {
-                renderer.setSize(container.clientWidth, container.clientHeight); 
-                camera.aspect = container.clientWidth / container.clientHeight; 
-                camera.updateProjectionMatrix(); 
+                renderer.setSize(container.clientWidth, container.clientHeight); camera.aspect = container.clientWidth / container.clientHeight; camera.updateProjectionMatrix(); 
             }
         });
         
