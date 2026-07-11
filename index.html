@@ -62,23 +62,23 @@
     <div class="panel-left">
         <h2>Gabaryty KORPUSU</h2>
         <div class="grid-2col">
-            <div><label>Wysokość korpusu</label><input type="number" value="720" oninput="updateGlobal('height', this.value)"></div>
-            <div><label>Szerokość całk.</label><input type="number" value="600" oninput="updateGlobal('width', this.value)"></div>
-            <div><label>Głębokość (D)</label><input type="number" value="510" oninput="updateGlobal('depth', this.value)"></div>
-            <div><label>Grubość płyty</label><input type="number" value="18" oninput="updateGlobal('thickness', this.value)"></div>
-            <div><label>Wysokość cokołu</label><input type="number" value="100" oninput="updateGlobal('baseHeight', this.value)"></div>
+            <div><label>Wysokość korpusu</label><input type="number" value="720" id="corp_height"></div>
+            <div><label>Szerokość całk.</label><input type="number" value="600" id="corp_width"></div>
+            <div><label>Głębokość (D)</label><input type="number" value="510" id="corp_depth"></div>
+            <div><label>Grubość płyty</label><input type="number" value="18" id="corp_thickness"></div>
+            <div><label>Wysokość cokołu</label><input type="number" value="100" id="corp_baseHeight"></div>
         </div>
 
         <h3>Główne założenia</h3>
         <div class="grid-2col">
             <div><label>Zwieńczenie góry</label>
-                <select onchange="updateConfig('topMode', this.value)">
+                <select id="cfg_topMode">
                     <option value="wieniec">Wieniec pełny</option>
                     <option value="trawersy">Trawersy</option>
                 </select>
             </div>
             <div><label>Typ pleców</label>
-                <select onchange="updateConfig('backType', this.value)">
+                <select id="cfg_backType">
                     <option value="nut">Wpuszczane w nut</option>
                     <option value="nakladane">Nakładane</option>
                     <option value="brak">Brak pleców</option>
@@ -88,29 +88,29 @@
 
         <h3>Wnętrze (Kalkulator Świateł)</h3>
         <div class="grid-2col">
-            <div><label>Cofnięcie od frontu</label><input type="number" value="5" oninput="updateConfig('shelfFrontClearance', this.value)"></div>
-            <div><label>Luz boczny (Ruchoma)</label><input type="number" value="0" oninput="updateConfig('shelfSideClearance', this.value)"></div>
+            <div><label>Cofnięcie od frontu</label><input type="number" value="5" id="cfg_shelfFrontClearance"></div>
+            <div><label>Luz boczny (Ruchoma)</label><input type="number" value="0" id="cfg_shelfSideClearance"></div>
         </div>
         <div class="interior-manager" id="interiorUI"></div>
 
         <h3>Technologia (CNC / Nawierty)</h3>
         <div class="grid-2col">
             <div><label>Typ połączeń</label>
-                <select onchange="updateConfig('jointType', this.value)">
+                <select id="cfg_jointType">
                     <option value="kolek_wkret">Kołek + Wkręt</option>
                     <option value="konfirmat">Konfirmat</option>
                 </select>
             </div>
             <div><label>Zawiasy (Prowadniki)</label>
-                <select onchange="updateConfig('hingeSide', this.value)">
+                <select id="cfg_hingeSide">
                     <option value="none">Brak frontów</option>
                     <option value="leftSide">Na lewym boku</option>
                     <option value="rightSide">Na prawym boku</option>
                 </select>
             </div>
             <div class="grid-full">
-                <button class="btn-action btn-draw" onclick="openDrawing('leftSide')">📄 Rysunek 2D: Bok Lewy</button>
-                <button class="btn-action btn-draw" onclick="openDrawing('rightSide')" style="margin-top: 5px;">📄 Rysunek 2D: Bok Prawy</button>
+                <button class="btn-action btn-draw" id="btn_draw_left">📄 Rysunek 2D: Bok Lewy</button>
+                <button class="btn-action btn-draw" id="btn_draw_right" style="margin-top: 5px;">📄 Rysunek 2D: Bok Prawy</button>
             </div>
         </div>
 
@@ -134,7 +134,7 @@
         <div id="drawing-container">
             <div id="drawing-header">
                 <h3 style="margin:0; color:white;" id="drawing-title">Rysunek Techniczny</h3>
-                <button onclick="document.getElementById('drawing-overlay').style.display='none'" style="padding: 5px 15px; background:#d32f2f; color:white;">Zamknij X</button>
+                <button id="btn_close_drawing" style="padding: 5px 15px; background:#d32f2f; color:white;">Zamknij X</button>
             </div>
             <div id="drawing-content">
                 <svg id="drawing-svg" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -506,16 +506,23 @@
                 }
             }
             
-            html += `<button class="btn-action" onclick="addSpace()">+ Dodaj Moduł / Półkę</button>`;
-            if (spaces.length > 1) { html += `<button class="btn-action" onclick="removeSpace()" style="margin-top:5px; background:#ffcdd2; color:#c62828;">- Usuń Moduł (Góra)</button>`; }
+            html += `<button class="btn-action" data-action="addSpace">+ Dodaj Moduł / Półkę</button>`;
+            if (spaces.length > 1) { html += `<button class="btn-action" data-action="removeSpace" style="margin-top:5px; background:#ffcdd2; color:#c62828;">- Usuń Moduł (Góra)</button>`; }
             document.getElementById('interiorUI').innerHTML = html;
         }
 
-        function toggleLock(idx) { state.interior.spaces[idx].locked = !state.interior.spaces[idx].locked; updateScene(); }
-        function handleSpaceInput(idx, val) { let v = parseFloat(val); if(!isNaN(v)) { state.interior.spaces[idx].val = v; state.interior.spaces[idx].locked = true; updateScene(); } }
-        function toggleShelfType(idx) { state.interior.shelves[idx].isFixed = !state.interior.shelves[idx].isFixed; updateScene(); }
-        function addSpace() { let nextId = state.interior.spaces.length + 1; state.interior.spaces.push({ id: 'sp_'+nextId, locked: false, val: 0 }); state.interior.shelves.push({ id: 'sh_'+(nextId-1), isFixed: false }); updateScene(); }
-        function removeSpace() { if (state.interior.spaces.length > 1) { state.interior.spaces.pop(); state.interior.shelves.pop(); updateScene(); } }
+        function handleInteriorClick(e) {
+            const target = e.target;
+            const action = target.dataset.action;
+            const idx = parseInt(target.dataset.idx, 10);
+
+            if (target.matches('.btn-lock')) { state.interior.spaces[idx].locked = !state.interior.spaces[idx].locked; }
+            else if (target.matches('.btn-shelf-type')) { state.interior.shelves[idx].isFixed = !state.interior.shelves[idx].isFixed; }
+            else if (action === 'addSpace') { let nextId = state.interior.spaces.length + 1; state.interior.spaces.push({ id: 'sp_'+nextId, locked: false, val: 0 }); state.interior.shelves.push({ id: 'sh_'+(nextId-1), isFixed: false }); }
+            else if (action === 'removeSpace') { if (state.interior.spaces.length > 1) { state.interior.spaces.pop(); state.interior.shelves.pop(); } }
+            else return;
+            updateScene();
+        }
 
         // --- KLASA 3D ---
         class CabinetPart {
@@ -650,16 +657,16 @@
             let html = '';
             
             if (id === 'leftSide' || id === 'rightSide') { html += `<label>Styk z podłogą:</label><select onchange="updatePart('${id}', 'toFloor', this.value)"><option value="false" ${!part.toFloor?'selected':''}>Na cokole / nóżkach</option><option value="true" ${part.toFloor?'selected':''}>Bok schodzi do ziemi</option></select>`; }
-            else if (id === 'bottom' || id === 'top') {
-                if (id === 'top') { html += `<label>Skrócenie od frontu (mm):</label><input type="number" value="${part.frontOffset}" oninput="updatePart('${id}', 'frontOffset', this.value)"><hr style="border:0; border-top:1px solid #90caf9; margin:10px 0;">`; }
-                html += `<div style="display:flex; gap: 10px;"><div style="flex:1"><label>Lewy styk:</label><select onchange="updatePart('${id}', 'leftJoint', this.value)"><option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option></select></div><div style="flex:1"><label>Prawy styk:</label><select onchange="updatePart('${id}', 'rightJoint', this.value)"><option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option></select></div></div>`;
+            if (id === 'bottom' || id === 'top') {
+                if (id === 'top') { html += `<label>Skrócenie od frontu (mm):</label><input type="number" value="${part.frontOffset}" data-param="frontOffset"><hr style="border:0; border-top:1px solid #90caf9; margin:10px 0;">`; }
+                html += `<div style="display:flex; gap: 10px;"><div style="flex:1"><label>Lewy styk:</label><select data-param="leftJoint"><option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option></select></div><div style="flex:1"><label>Prawy styk:</label><select data-param="rightJoint"><option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option></select></div></div>`;
             }
             else if (id === 'travFront' || id === 'travBack') {
-                html += `<div style="margin-bottom: 10px;"><label style="color: #d32f2f;">Status elementu:</label><select onchange="updatePart('${id}', 'active', this.value)"><option value="true" ${part.active?'selected':''}>Włączony</option><option value="false" ${!part.active?'selected':''}>Wyłącz / Usuń</option></select><label>Ułożenie:</label><select onchange="updatePart('${id}', 'orient', this.value)"><option value="poziom" ${part.orient==='poziom'?'selected':''}>Na płasko (Poziom)</option><option value="pion" ${part.orient==='pion'?'selected':''}>Na sztorc (Pion)</option></select></div>`;
-                if (id === 'travFront') html += `<label>Odsunięcie od frontu (mm):</label><input type="number" value="${part.frontOffset}" oninput="updatePart('${id}', 'frontOffset', this.value)" style="margin-bottom: 10px;">`;
-                html += `<div style="display:flex; gap: 10px;"><div style="flex:1"><label>Lewy styk:</label><select onchange="updatePart('${id}', 'leftJoint', this.value)"><option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option></select></div><div style="flex:1"><label>Prawy styk:</label><select onchange="updatePart('${id}', 'rightJoint', this.value)"><option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option></select></div></div>`;
+                html += `<div style="margin-bottom: 10px;"><label style="color: #d32f2f;">Status elementu:</label><select data-param="active"><option value="true" ${part.active?'selected':''}>Włączony</option><option value="false" ${!part.active?'selected':''}>Wyłącz / Usuń</option></select><label>Ułożenie:</label><select data-param="orient"><option value="poziom" ${part.orient==='poziom'?'selected':''}>Na płasko (Poziom)</option><option value="pion" ${part.orient==='pion'?'selected':''}>Na sztorc (Pion)</option></select></div>`;
+                if (id === 'travFront') html += `<label>Odsunięcie od frontu (mm):</label><input type="number" value="${part.frontOffset}" data-param="frontOffset" style="margin-bottom: 10px;">`;
+                html += `<div style="display:flex; gap: 10px;"><div style="flex:1"><label>Lewy styk:</label><select data-param="leftJoint"><option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option></select></div><div style="flex:1"><label>Prawy styk:</label><select data-param="rightJoint"><option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option></select></div></div>`;
             }
-            else if (id === 'back') { if(c.backType === 'nut') html += `<label>Odsunięcie nutu (od krawędzi tyłu):</label><input type="number" value="${c.nutOffset}" oninput="updateConfig('nutOffset', this.value)">`; }
+            else if (id === 'back') { if(c.backType === 'nut') html += `<label>Odsunięcie nutu (od krawędzi tyłu):</label><input type="number" value="${c.nutOffset}" id="cfg_nutOffset">`; }
             document.getElementById('ins_options').innerHTML = html;
         }
 
@@ -681,7 +688,45 @@
             }
         });
         
-        updateScene(); animate();
+        function initEventListeners() {
+            // Gabaryty
+            document.getElementById('corp_height').addEventListener('input', e => updateGlobal('height', e.target.value));
+            document.getElementById('corp_width').addEventListener('input', e => updateGlobal('width', e.target.value));
+            document.getElementById('corp_depth').addEventListener('input', e => updateGlobal('depth', e.target.value));
+            document.getElementById('corp_thickness').addEventListener('input', e => updateGlobal('thickness', e.target.value));
+            document.getElementById('corp_baseHeight').addEventListener('input', e => updateGlobal('baseHeight', e.target.value));
+
+            // Konfiguracja
+            document.getElementById('cfg_topMode').addEventListener('change', e => updateConfig('topMode', e.target.value));
+            document.getElementById('cfg_backType').addEventListener('change', e => updateConfig('backType', e.target.value));
+            document.getElementById('cfg_shelfFrontClearance').addEventListener('input', e => updateConfig('shelfFrontClearance', e.target.value));
+            document.getElementById('cfg_shelfSideClearance').addEventListener('input', e => updateConfig('shelfSideClearance', e.target.value));
+            document.getElementById('cfg_jointType').addEventListener('change', e => updateConfig('jointType', e.target.value));
+            document.getElementById('cfg_hingeSide').addEventListener('change', e => updateConfig('hingeSide', e.target.value));
+
+            // Przyciski
+            document.getElementById('btn_draw_left').addEventListener('click', () => openDrawing('leftSide'));
+            document.getElementById('btn_draw_right').addEventListener('click', () => openDrawing('rightSide'));
+            document.getElementById('btn_close_drawing').addEventListener('click', () => document.getElementById('drawing-overlay').style.display = 'none');
+
+            // Manager Wnętrza (delegacja)
+            document.getElementById('interiorUI').addEventListener('click', handleInteriorClick);
+            document.getElementById('interiorUI').addEventListener('change', e => {
+                if (e.target.matches('input[type="number"]')) {
+                    const idx = parseInt(e.target.parentElement.parentElement.querySelector('.btn-lock').dataset.idx, 10);
+                    let v = parseFloat(e.target.value);
+                    if(!isNaN(v)) { state.interior.spaces[idx].val = v; state.interior.spaces[idx].locked = true; updateScene(); }
+                }
+            });
+
+            // Inspektor (delegacja)
+            document.getElementById('inspector').addEventListener('input', e => {
+                if (e.target.id === 'cfg_nutOffset') updateConfig('nutOffset', e.target.value);
+                else if (e.target.dataset.param) updatePart(selectedPartId, e.target.dataset.param, e.target.value);
+            });
+        }
+
+        initEventListeners(); updateScene(); animate();
     </script>
 </body>
 </html>
