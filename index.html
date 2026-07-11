@@ -1,732 +1,1766 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Stolarski 3D - V5.0 (Produkcja & Rysunki 2D)</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; display: flex; flex-wrap: wrap; gap: 20px; }
-        .panel-left { flex: 1; min-width: 360px; max-width: 440px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; overflow-y: auto; height: calc(100vh - 40px); box-sizing: border-box; }
-        .panel-right { flex: 3; min-width: 400px; height: calc(100vh - 40px); background: #e8ebed; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #ccc; }
-        
-        h2 { font-size: 1.2rem; color: #1F4E79; border-bottom: 2px solid #E2EFDA; padding-bottom: 8px; margin: 0 0 15px 0; }
-        h3 { font-size: 1rem; color: #1F4E79; margin: 20px 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        
-        .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        label { display: block; font-size: 0.85rem; font-weight: bold; margin-top: 8px; margin-bottom: 4px; color: #555; }
-        input[type="number"], select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem; background: #f9fbfd; }
-        input:focus, select:focus { outline: none; border-color: #1F4E79; background: #fff; }
-        button { cursor: pointer; border-radius: 4px; border: none; font-weight: bold; }
-        
-        .interior-manager { background: #f8f9fa; border: 1px solid #ddd; padding: 10px; border-radius: 6px; margin-top: 10px; }
-        .space-block { background: #fff; border: 1px solid #ccc; padding: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .space-block input { width: 80px; text-align: center; font-weight: bold; }
-        .btn-lock { padding: 6px 12px; font-size: 0.85rem; transition: 0.2s; border: 1px solid transparent; }
-        .btn-lock.locked { background: #d32f2f; color: white; }
-        .btn-lock.unlocked { background: #e0e0e0; color: #333; }
-        .btn-lock.disabled-auto { background: #f5f5f5; color: #9e9e9e; border-color: #ddd; cursor: not-allowed; }
-        
-        .shelf-divider { display: flex; justify-content: center; margin: 4px 0; }
-        .btn-shelf-type { width: 80%; padding: 6px; font-size: 0.85rem; border: 1px solid; border-radius: 4px; background: #fff; transition: 0.2s; }
-        .type-fixed { border-color: #388e3c; color: #1b5e20; background: #a5d6a7; font-weight: bold; }
-        .type-movable { border-color: #1976d2; color: #1976d2; background: #e3f2fd; border-style: dashed; }
-        
-        .btn-action { width: 100%; padding: 8px; margin-top: 5px; background: #e0e0e0; }
-        .btn-action:hover { background: #d5d5d5; }
-        .btn-draw { background: #1565c0; color: white; margin-top: 10px; }
-        .btn-draw:hover { background: #0d47a1; }
-        
-        #inspector { background: #e3f2fd; padding: 15px; border-radius: 6px; border: 1px solid #90caf9; margin-top: 15px; display: none; }
-        #inspector h4 { margin: 0 0 10px 0; color: #1565c0; font-size: 1.05rem; border-bottom: 1px solid #90caf9; padding-bottom: 5px; }
-        
-        .cut-list { font-size: 0.85rem; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #ddd; }
-        .cut-list table { width: 100%; border-collapse: collapse; }
-        .cut-list th, .cut-list td { padding: 4px; text-align: left; border-bottom: 1px solid #eee; }
-        
-        .instructions { position: absolute; bottom: 15px; left: 15px; background: rgba(255,255,255,0.85); padding: 10px; border-radius: 6px; font-size: 0.8rem; color: #333; pointer-events: none; border: 1px solid #ddd; z-index: 10; }
-        #error-overlay { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(211, 47, 47, 0.9); color: white; padding: 15px; border-radius: 6px; display: none; z-index: 1000; font-weight: bold; }
-        #canvas-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+<!DOCTYPE html> 
+<html lang="pl"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Generator Stolarski 2D & 3D Pro</title> 
+    <style> 
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; } 
+        .container { max-width: 98%; margin: auto; display: flex; gap: 20px; flex-wrap: wrap; align-items: stretch; } 
+        .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; display: flex; flex-direction: column; } 
+        .panel-left { flex: 1.2; min-width: 440px; max-width: 520px; } 
+        .panel-right { flex: 2.5; min-width: 600px; position: sticky; top: 20px; align-self: flex-start; height: calc(100vh - 40px); display: flex; flex-direction: column; } 
+        .panel-bottom { flex: 100%; width: 100%; margin-top: 10px; } 
+         
+        h2 { margin-top: 0; font-size: 1.2rem; color: #1F4E79; border-bottom: 2px solid #E2EFDA; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; } 
+        h3 { font-size: 1rem; color: #555; margin-bottom: 10px; margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px;} 
+        label { display: block; font-size: 0.85rem; font-weight: bold; margin-top: 10px; margin-bottom: 4px; color: #555; } 
+        input[type="number"], input[type="text"], select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; background: #f9fbfd; } 
+        input:focus, select:focus { outline: none; border-color: #1F4E79; background: #fff; } 
+        input[readonly], input[disabled] { background: #f0f0f0; border-color: #ddd; color: #777; cursor: not-allowed; } 
+         
+        .view-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #e8f0fe; padding: 12px; border-radius: 6px; border-left: 4px solid #1F4E79; margin-bottom: 15px; } 
+        .view-options label { margin: 0; font-weight: bold; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; color: #1F4E79; } 
+        .view-options input[type="checkbox"] { width: auto; accent-color: #1F4E79; transform: scale(1.2); margin:0; } 
 
-        /* Nakładka Rysunku 2D */
-        #drawing-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px; }
-        #drawing-container { background: white; width: 100%; max-width: 900px; height: 90vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
-        #drawing-header { padding: 15px; background: #1F4E79; color: white; display: flex; justify-content: space-between; align-items: center; }
-        #drawing-content { flex: 1; overflow: auto; padding: 20px; display: flex; justify-content: center; align-items: center; background: #f0f0f0; }
-        #drawing-svg { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #ccc; }
-    </style>
+        .space-row { background: #f9fbfd; padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #eee; transition: 0.2s; } 
+        .space-row.locked { border-left: 4px solid #d32f2f; background: #fce8e8; } 
+        .space-row.resultant { border-left: 4px solid #f57c00; background: #fff3e0; } 
+        .space-row.drawer-active { border-left: 4px solid #2e7d32; background: #e8f5e9; } 
+        .space-header { display: flex; justify-content: space-between; align-items: center; } 
+        .space-row label.main-label { margin: 0; font-size: 0.9rem; color: #333; font-weight: bold; } 
+        .space-input-group { display: flex; gap: 8px; align-items: center; } 
+        .space-input-group input { width: 80px; text-align: center; font-weight: bold; padding: 6px; border: 1px solid #ccc; border-radius: 4px; } 
+         
+        .structural-divider { text-align: center; padding: 6px; background: #e2efda; border: 1px dashed #2e7d32; border-radius: 4px; margin-bottom: 8px; } 
+        .structural-divider label { margin: 0; cursor: pointer; font-size: 0.8rem; color: #2e7d32; display: flex; justify-content: center; align-items: center; gap: 5px; } 
+
+        .space-panel-inner { margin-top: 8px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #ddd; }
+        .sp-header-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .sp-select-group { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 140px; }
+        .sp-select-group span { font-size: 0.8rem; font-weight: bold; color: #1F4E79; white-space: nowrap; }
+        .sp-select-group select { flex: 1; padding: 4px; font-size: 0.8rem; border: 1px solid #ccc; border-radius: 4px; width: 100%; }
+
+        .sp-settings-card { border: 1px solid #e0e0e0; border-radius: 6px; padding: 8px; margin-bottom: 8px; background: #fafafa; }
+        .sp-settings-title { font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 8px; display: block; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+        
+        .sp-grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px; }
+        .sp-input-label { display: flex; flex-direction: column; font-size: 0.75rem; color: #333; gap: 3px; }
+        .sp-input-label span { opacity: 0.8; }
+        .sp-input-label input { width: 100%; padding: 4px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
+        
+        .sp-drawer-item { background: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .sp-drawer-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; }
+        .sp-drawer-row select { max-width: 150px; }
+        
+        .btn-small-outline { padding: 3px 6px; font-size: 0.75rem; background: #fff; border: 1px solid #1F4E79; color: #1F4E79; border-radius: 4px; cursor: pointer; transition: 0.2s; white-space: nowrap;}
+        .btn-small-outline:hover { background: #e8f0fe; }
+
+        button { background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: #555; transition: 0.2s; } 
+        button:hover:not([disabled]) { background: #f0f0f0; } 
+         
+        .lock-btn { width: 115px; } 
+        .lock-btn.locked { background: #d32f2f; color: white; border-color: #b71c1c; } 
+        .lock-btn.locked:hover { background: #b71c1c; } 
+        .lock-btn[disabled] { opacity: 0.6; cursor: not-allowed; border-color: #f57c00; color: #e65100; background: #ffe0b2; } 
+         
+        .btn-primary { background: #1F4E79; color: white; border-color: #153a5b; padding: 10px 15px; width: 100%; font-size: 1rem; margin-top: 15px; } 
+        .btn-primary:hover { background: #153a5b; } 
+         
+        .btn-print { background: #2e7d32; color: white; border-color: #1b5e20; } 
+        .btn-print:hover { background: #1b5e20; } 
+        
+        /* Toggles for 2D/3D */
+        .view-toggle-btn { background: #f0f0f0; border: 1px solid #ccc; color: #555; padding: 6px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: 0.3s; }
+        .view-toggle-btn.active { background: #1F4E79; color: white; border-color: #153a5b; }
+         
+        .error-msg { display: none; background: #fce8e8; color: #d32f2f; font-weight: bold; padding: 10px; border-radius: 6px; border: 1px solid #d32f2f; margin-bottom: 15px; text-align: center; font-size: 0.9rem; } 
+         
+        .saved-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 15px; } 
+        .saved-item { background: #f9fbfd; border: 1px solid #ddd; padding: 15px; border-radius: 6px; border-left: 4px solid #f57c00; } 
+        .saved-item h4 { margin: 0 0 10px 0; color: #1F4E79; } 
+        .saved-item p { margin: 0 0 10px 0; font-size: 0.85rem; color: #555; } 
+        .saved-actions { display: flex; gap: 10px; } 
+        .btn-load { background: #e2efda; border-color: #2e7d32; color: #2e7d32; flex: 1; } 
+        .btn-delete { background: #fce8e8; border-color: #d32f2f; color: #d32f2f; } 
+ 
+        .svg-container { position: relative; overflow: hidden; background: #fafafa; border: 1px dashed #ccc; border-radius: 6px; flex: 1; min-height: 0; cursor: grab; display: flex; justify-content: center; align-items: center; margin-top: 15px; } 
+        .svg-container:active { cursor: grabbing; } 
+        .svg-wrapper { width: 100%; height: 100%; transform-origin: center center; transition: transform 0.05s linear; pointer-events: none; } 
+        
+        #canvas-container { position: relative; overflow: hidden; background: #e8ebed; border: 1px dashed #ccc; border-radius: 6px; flex: 1; min-height: 0; display: none; justify-content: center; align-items: center; margin-top: 15px; } 
+        #canvas-container canvas { display: block; width: 100% !important; height: 100% !important; outline: none; }
+
+        #printArea { display: none; } 
+         
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #fff; padding: 20px 30px; border-radius: 8px; width: 90%; max-width: 800px; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1F4E79; padding-bottom: 10px; margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; border: none; padding: 0; }
+        .btn-close { background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-close:hover { background: #b71c1c; }
+         
+        .cut-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; text-align: center; }
+        .cut-table th { background: #e8f0fe; color: #1F4E79; padding: 10px; border: 1px solid #ddd; }
+        .cut-table td { padding: 8px; border: 1px solid #ddd; color: #333; }
+        .cut-table tr:nth-child(even) { background: #f9fbfd; }
+        .table-group-header { background: #1F4E79 !important; color: white !important; font-weight: bold; text-align: left !important; }
+
+        @media print { 
+            body { background: white; margin: 0; padding: 0; } 
+            .container { display: none !important; } 
+            #printArea { display: block !important; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: white; } 
+            #printArea svg { width: 100%; height: 100%; max-height: 98vh; } 
+            @page { margin: 0.5cm; } 
+        } 
+ 
+        @media (max-width: 1024px) { 
+            .panel-right { position: static !important; height: auto !important; align-self: stretch; min-width: 100%; } 
+            .svg-container, #canvas-container { min-height: 500px; } 
+        } 
+    </style> 
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script> 
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script> 
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-</head>
-<body>
-
-    <div class="panel-left">
-        <h2>Gabaryty KORPUSU</h2>
-        <div class="grid-2col">
-            <div><label>Wysokość korpusu</label><input type="number" value="720" id="corp_height"></div>
-            <div><label>Szerokość całk.</label><input type="number" value="600" id="corp_width"></div>
-            <div><label>Głębokość (D)</label><input type="number" value="510" id="corp_depth"></div>
-            <div><label>Grubość płyty</label><input type="number" value="18" id="corp_thickness"></div>
-            <div><label>Wysokość cokołu</label><input type="number" value="100" id="corp_baseHeight"></div>
-        </div>
-
-        <h3>Główne założenia</h3>
-        <div class="grid-2col">
-            <div><label>Zwieńczenie góry</label>
-                <select id="cfg_topMode">
-                    <option value="wieniec">Wieniec pełny</option>
-                    <option value="trawersy">Trawersy</option>
-                </select>
+</head> 
+<body> 
+    <div class="container"> 
+        <div class="panel panel-left"> 
+            <h2>Opcje i Widoki</h2> 
+            <div style="margin-bottom: 15px;">
+                <button class="btn-primary" style="background:#2e7d32; border-color:#1b5e20;" onclick="showCutList()">📋 Wygeneruj Listę Formatek</button>
             </div>
-            <div><label>Typ pleców</label>
-                <select id="cfg_backType">
-                    <option value="nut">Wpuszczane w nut</option>
-                    <option value="nakladane">Nakładane</option>
-                    <option value="brak">Brak pleców</option>
-                </select>
-            </div>
-        </div>
+             
+            <div class="view-options"> 
+                <label><input type="checkbox" id="sClearance" checked onchange="run()"> Światło (Wymiar)</label> 
+                <label><input type="checkbox" id="sShelfAxis" checked onchange="run()"> Oś półki</label> 
+                <label><input type="checkbox" id="sShelfHoles" checked onchange="run()"> Nawierty (Półki/Wieńce)</label> 
+                <label><input type="checkbox" id="sDistances" checked onchange="run()"> Dystanse podpórek</label> 
+                <label><input type="checkbox" id="sHingeAxis" checked onchange="run()"> Prowadnik (oś)</label> 
+                <label><input type="checkbox" id="sHingeHoles" checked onchange="run()"> Prowadnik (otwory)</label> 
+                <label><input type="checkbox" id="sFront" checked onchange="run()"> Rzut Frontu</label> 
+                <label><input type="checkbox" id="sDrawerTopHoles" checked onchange="run()"> Szuflada - Otwór montażowy</label> 
+                <label><input type="checkbox" id="sDrawerYDim" checked onchange="run()"> Szuflada - Rozstawy w poziomie (Y)</label> 
+                <label style="color:#d32f2f; font-weight:bold; grid-column: span 2;"><input type="checkbox" id="rcMode" onchange="run()"> 🛠 RCSystem</label>
+            </div> 
+ 
+            <h3>Parametry Korpusu</h3> 
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;"> 
+                <div><label>Wysokość (H)</label><input type="number" id="hBox" value="2000" min="0" oninput="run()"></div> 
+                <div><label>Szerokość (W)</label><input type="number" id="wBox" value="600" min="0" oninput="run()"></div> 
+                <div><label>Głębokość boku (D)</label><input type="number" id="dBox" value="510" min="0" oninput="updateTotalDepth(); run();"></div> 
+                <div><label>Głębokość całkowita</label><input type="number" id="totalDepth" value="531" min="0" oninput="updateDBoxFromTotal(); run();"></div> 
+                <div><label>Ilość półek</label><input type="number" id="qPol" value="4" min="0" oninput="run()"></div> 
+                <div><label>Typ korpusu</label> 
+                    <select id="kTyp" onchange="run()"> 
+                        <option value="wpuszczane">Wpuszczane</option> 
+                        <option value="nakladane">Nakładane</option> 
+                    </select> 
+                </div> 
+                <div><label>Wysokość cokołu</label><input type="number" id="cokol" value="100" min="0" oninput="run()"></div> 
+                <div><label>Offset podpórki (Dół)</label><input type="number" id="offsetPodporki" value="3" oninput="run()"></div> 
+                <div><label>Luz boczny półki</label><input type="number" id="luzBocznyPolki" value="0" min="0" oninput="run()"></div>
+                <div><label>Grubość płyty (korpus)</label><input type="number" id="tBoard" value="18" min="0" oninput="run()"></div> 
+                <div><label>Konstrukcja pleców</label> 
+                    <select id="backType" onchange="toggleBackFields(); updateTotalDepth(); run();"> 
+                        <option value="nakladane">Nakładane od tyłu</option> 
+                        <option value="nut">Wpuszczane w nut</option> 
+                    </select> 
+                </div>
+                <div><label>Grubość pleców (mm)</label><input type="number" id="grPlecy" value="3" min="0" oninput="updateTotalDepth(); run();"></div>
+                <div id="nutDepthField" style="display:none; grid-column: span 2;"><label>Głębokość nutu (mm)</label><input type="number" id="nutDepth" value="20" min="0" oninput="run()"></div> 
+            </div> 
+ 
+            <h3>Fronty (Główne domyślne nałożenia)</h3> 
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;"> 
+                <div> 
+                    <label style="display:flex; justify-content:space-between; align-items:center;"> 
+                        Ilość zaw. / drzwi 
+                        <span style="font-weight:normal; font-size:0.8rem; display:flex; align-items:center; gap:4px; color:#1F4E79; cursor:pointer;"> 
+                            <input type="checkbox" id="autoZaw" checked onchange="toggleAutoZaw()" style="width:auto; margin:0; cursor:pointer;"> Auto 
+                        </span> 
+                    </label> 
+                    <input type="number" id="qZaw" value="4" min="0" max="8" disabled oninput="run()"> 
+                </div> 
+                <div><label>Strefa ochrony zawiasu</label><input type="number" id="cMargin" value="35" min="0" oninput="run()"></div> 
+                <div><label>Puszka (od dołu drzwi)</label><input type="number" id="zOffD" value="100" min="0" oninput="run()"></div> 
+                <div><label>Puszka (od góry drzwi)</label><input type="number" id="zOffG" value="100" min="0" oninput="run()"></div> 
+                
+                <div><label>Nałożenie - Góra (Top)</label><input type="number" id="nTop" value="13" step="0.5" oninput="run()"></div> 
+                <div><label>Nałożenie - Dół (Bottom)</label><input type="number" id="nBottom" value="18" step="0.5" oninput="run()"></div> 
+                <div><label>Nałożenie - Lewo (Left)</label><input type="number" id="nLeft" value="16.5" step="0.5" oninput="run()"></div> 
+                <div><label>Nałożenie - Prawo (Right)</label><input type="number" id="nRight" value="16.5" step="0.5" oninput="run()"></div> 
+                <div style="grid-column: span 2;"><label>Nałożenie - Wewnętrzne (Półki/Styki)</label><input type="number" id="nWewnetrzne" value="7.5" step="0.5" oninput="run()"></div> 
+                 
+                <div style="grid-column: span 2;"> 
+                    <label>System prowadnic szuflad</label> 
+                    <select id="drawerSystem" onchange="updateDrawerFields(); updateAllDrawersToDefault(); run();"> 
+                        <option value="44">GTV Axis Pro(Dno 16mm)</option> 
+                        <option value="44_18">GTV Axis Pro(Dno 18mm)</option> 
+                        <option value="54">Blum Merivobox</option> 
+                        <option value="33">Blum Antaro / Tandembox</option> 
+                        <option value="custom">Inne</option> 
+                    </select> 
+                </div> 
+                <div id="customDrawerField" style="grid-column: span 2; display:none;"> 
+                    <label>Własna wysokość otworu górnego (mm)</label> 
+                    <input type="number" id="customDrawerAxis" value="44" min="0" oninput="run()"> 
+                </div> 
+            </div> 
+ 
+            <h3>Manager Przestrzeni</h3> 
+            <div id="errorBox" class="error-msg"></div> 
+            <div id="spaceControls"></div> 
+ 
+            <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;"> 
+            <label>Nazwa do zapisu projektu:</label> 
+            <input type="text" id="cabName" value="Szafka z szufladami i półkami" placeholder="np. Szafka kuchenna lewa"> 
+            <div style="display: flex; gap: 10px;"> 
+                <button class="btn-primary" onclick="saveCabinet()">💾 Zapisz jako nowy</button> 
+                <button id="btnUpdate" class="btn-primary" style="display: none; background: #f57c00; border-color: #e65100;" onclick="updateCabinet()">🔄 Aktualizuj wczytany</button> 
+            </div> 
+        </div> 
+         
+        <div class="panel panel-right"> 
+            <h2> 
+                Podgląd Projektu
+                <div style="display:flex; gap: 5px; align-items:center;">
+                    <button id="btnView2D" class="view-toggle-btn active" onclick="switchView('2D')">Wykres 2D</button>
+                    <button id="btnView3D" class="view-toggle-btn" onclick="switchView('3D')">Model 3D</button>
+                </div>
+            </h2> 
+            
+            <div id="toolbar2D" style="display:flex; gap: 5px; align-items:center; margin-bottom: 5px; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #eee;"> 
+                <select id="printType" style="width:auto; padding:5px; font-size:0.85rem; margin-right:5px;"> 
+                    <option value="all">Drukuj: Wszystko</option> 
+                    <option value="interior">Drukuj: Tylko Wnętrze</option> 
+                    <option value="side">Drukuj: Tylko Bok</option> 
+                    <option value="front">Drukuj: Tylko Front</option> 
+                </select> 
+                <button class="btn-print" onclick="printView()">🖨️ Drukuj</button> 
+                <span style="color:#ddd; margin: 0 5px;">|</span> 
+                <button onclick="resetZoom()">⟲ Reset</button> 
+                <button onclick="zoomManual(0.2)">+</button> 
+                <button onclick="zoomManual(-0.2)">-</button> 
+            </div> 
 
-        <h3>Wnętrze (Kalkulator Świateł)</h3>
-        <div class="grid-2col">
-            <div><label>Cofnięcie od frontu</label><input type="number" value="5" id="cfg_shelfFrontClearance"></div>
-            <div><label>Luz boczny (Ruchoma)</label><input type="number" value="0" id="cfg_shelfSideClearance"></div>
-        </div>
-        <div class="interior-manager" id="interiorUI"></div>
-
-        <h3>Technologia (CNC / Nawierty)</h3>
-        <div class="grid-2col">
-            <div><label>Typ połączeń</label>
-                <select id="cfg_jointType">
-                    <option value="kolek_wkret">Kołek + Wkręt</option>
-                    <option value="konfirmat">Konfirmat</option>
-                </select>
+            <div id="svgContainer" class="svg-container"> 
+                <div id="svgWrapper" class="svg-wrapper"></div> 
+            </div> 
+            
+            <div id="canvas-container"></div>
+        </div> 
+    </div> 
+ 
+    <div class="container" style="margin-top: 20px;"> 
+        <div class="panel panel-bottom"> 
+            <h2>Baza zapisanych projektów</h2> 
+            <div id="savedList" class="saved-list"></div> 
+        </div> 
+    </div> 
+    <div id="cutListModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Lista Formatek</h2>
+                <button class="btn-close" onclick="closeCutList()">Zamknij (X)</button>
             </div>
-            <div><label>Zawiasy (Prowadniki)</label>
-                <select id="cfg_hingeSide">
-                    <option value="none">Brak frontów</option>
-                    <option value="leftSide">Na lewym boku</option>
-                    <option value="rightSide">Na prawym boku</option>
-                </select>
-            </div>
-            <div class="grid-full">
-                <button class="btn-action btn-draw" id="btn_draw_left">📄 Rysunek 2D: Bok Lewy</button>
-                <button class="btn-action btn-draw" id="btn_draw_right" style="margin-top: 5px;">📄 Rysunek 2D: Bok Prawy</button>
-            </div>
+            <div id="cutListContainer"></div>
         </div>
-
-        <div id="inspector">
-            <h4>Edycja: <span id="ins_name">-</span></h4>
-            <p style="margin:2px 0 10px 0; font-size: 0.85rem; color: #555;" id="ins_dim">-</p>
-            <div id="ins_options"></div>
-        </div>
-
-        <h3>Rozkrój (Na żywo)</h3>
-        <div class="cut-list" id="cutListContainer"></div>
     </div>
+ 
+    <script> 
+        // ---------------- FIREBASE SETUP ---------------- //
+        const firebaseConfig = { 
+            apiKey: "AIzaSyAYIhS-8GDN8K3hXZLelH-B0OoXOzlyFIo", 
+            authDomain: "generator-stolarski.firebaseapp.com", 
+            projectId: "generator-stolarski", 
+            storageBucket: "generator-stolarski.firebasestorage.app", 
+            messagingSenderId: "94537532682", 
+            appId: "1:94537532682:web:0dbb7053686a891c6c26f3" 
+        }; 
+        firebase.initializeApp(firebaseConfig); 
+        const db = firebase.firestore(); 
 
-    <div class="panel-right">
-        <div id="error-overlay"></div>
-        <div id="canvas-container"></div>
-        <div class="instructions">Lewy klik: <b>Zaznacz detal w Inspektorze</b> | Prawy klik: <b>Przesuń</b> | Scroll: <b>Zoom</b></div>
-    </div>
+        // ---------------- GLOBALNE ZMIENNE 2D ---------------- //
+        let cloudCabinets = [];  
+        let currentLoadedDocId = null;  
+        let zScale = 1; let panX = 0; let panY = 0; let isDragging = false; let startX = 0; let startY = 0; 
+        let spaceLocks = []; 
+        let structuralShelves = []; 
+        const FRONT_THICKNESS = 18; 
+        
+        // Eksportowane do 3D globalne wyniki
+        window.lastFrontBlocks = [];
+        window.lastOsie = [];
 
-    <div id="drawing-overlay">
-        <div id="drawing-container">
-            <div id="drawing-header">
-                <h3 style="margin:0; color:white;" id="drawing-title">Rysunek Techniczny</h3>
-                <button id="btn_close_drawing" style="padding: 5px 15px; background:#d32f2f; color:white;">Zamknij X</button>
-            </div>
-            <div id="drawing-content">
-                <svg id="drawing-svg" xmlns="http://www.w3.org/2000/svg"></svg>
-            </div>
-        </div>
-    </div>
+        // ---------------- GLOBALNE ZMIENNE 3D ---------------- //
+        let scene, camera, renderer, cabinetGroup, controls;
+        let is3DInitialized = false;
 
-    <script>
-        window.onerror = function(message, source, lineno, colno, error) {
-            document.getElementById('error-overlay').style.display = 'block';
-            document.getElementById('error-overlay').innerHTML = `CRITICAL ERROR: ${message} (Linia: ${lineno})`;
-        };
-
-        const state = {
-            global: { width: 600, height: 720, depth: 510, thickness: 18, baseHeight: 100 },
-            config: { 
-                topMode: 'wieniec', traverseWidth: 80,
-                backType: 'nut', hdfThickness: 3, nutOffset: 15,
-                shelfSideClearance: 0, shelfFrontClearance: 5,
-                // NOWE USTAWIENIA TECHNOLOGICZNE
-                jointType: 'kolek_wkret', hingeSide: 'none', hingeOffset: 100
+        const DRAWER_DB = { 
+            "44": { 
+                name: "GTV Axis Pro / Modern Box", 
+                lengths: [250, 300, 350, 400, 450, 500, 550, 600], 
+                ltRequired: 5, 
+                yHolesMap: { 250: [96], 300: [128], 350: [128], 400: [192], 450: [192], 500: [224], 550: [224], 600: [224, 352] }, 
+                types: [ { id: "A", label: "A (Niska)", minFront: 105 }, { id: "B", label: "B (Średnia)", minFront: 160 }, { id: "C", label: "C (Wysoka)", minFront: 192 }, { id: "D", label: "D (B. Wysoka)", minFront: 224 } ], 
+                default: "C" 
+            }, 
+            "44_18": { 
+                name: "GTV Axis Pro (Dno 18mm)", 
+                lengths: [250, 300, 350, 400, 450, 500, 550, 600], 
+                ltRequired: 5, 
+                yHolesMap: { 250: [96], 300: [128], 350: [128], 400: [192], 450: [192], 500: [224], 550: [224], 600: [224, 352] }, 
+                types: [ { id: "A", label: "A (H=86)", minFront: 115 }, { id: "B", label: "B (H=120)", minFront: 147 }, { id: "C", label: "C (H=168)", minFront: 198 }, { id: "D", label: "D (H=200)", minFront: 230 } ], 
+                default: "C" 
             },
-            interior: {
-                spaces: [ { id: 'sp_1', locked: false, val: 0 }, { id: 'sp_2', locked: false, val: 0 }, { id: 'sp_3', locked: false, val: 0 } ],
-                shelves: [ { id: 'sh_1', isFixed: false }, { id: 'sh_2', isFixed: false } ]
-            },
-            parts: {
-                leftSide:  { id: 'leftSide', name: 'Bok Lewy', material: 'korpus', active: true, toFloor: false, drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 },
-                rightSide: { id: 'rightSide', name: 'Bok Prawy', material: 'korpus', active: true, toFloor: false, drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 },
-                bottom:    { id: 'bottom', name: 'Wieniec Dolny', material: 'korpus', active: true, leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 },
-                top:       { id: 'top', name: 'Wieniec Górny', material: 'korpus', active: true, leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', frontOffset: 0, drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 },
-                travFront: { id: 'travFront', name: 'Trawers Przód', material: 'trawers', active: false, orient: 'poziom', leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', frontOffset: 0, drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 },
-                travBack:  { id: 'travBack', name: 'Trawers Tył', material: 'trawers', active: false, orient: 'poziom', leftJoint: 'wpuszczany', rightJoint: 'wpuszczany', drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 },
-                back:      { id: 'back', name: 'Plecy HDF', material: 'hdf', active: true, w:0, h:0, d:0, x:0, y:0, z:0 }
-            }
-        };
+            "54": { 
+                name: "Blum Merivobox", 
+                lengths: [270, 300, 350, 400, 450, 500, 550, 600], 
+                ltRequired: 3, 
+                yHolesMap: { 270: [96], 300: [128], 350: [128], 400: [192], 450: [192, 256], 500: [224, 288], 550: [224, 352], 600: [224, 384] }, 
+                types: [ { id: "N", label: "N (B. Niska)", minFront: 85.5 }, { id: "M", label: "M (Niska)", minFront: 108 }, { id: "K", label: "K (Średnia)", minFront: 146 }, { id: "E", label: "E (Wysoka)", minFront: 209 } ], 
+                default: "K" 
+            }, 
+            "33": { 
+                name: "Blum Antaro / Tandembox", 
+                lengths: [270, 300, 350, 400, 450, 500, 550, 600, 650], 
+                ltRequired: 3, 
+                yHolesMap: { 270: [96], 300: [128], 350: [128], 400: [192], 450: [192, 288], 500: [224, 288], 550: [224, 384], 600: [224, 384], 650: [224, 384, 480] }, 
+                types: [ { id: "N", label: "N (B. Niska)", minFront: 82.5 }, { id: "M", label: "M (Niska)", minFront: 98.5 }, { id: "K", label: "K (Średnia)", minFront: 130.5 }, { id: "C", label: "C (Wysoka)", minFront: 192 }, { id: "D", label: "D (B. Wysoka)", minFront: 224 } ], 
+                default: "D" 
+            }, 
+            "custom": { 
+                name: "Inne (Własne)", 
+                lengths: [250, 300, 350, 400, 450, 500, 550, 600], 
+                ltRequired: 3, 
+                yHolesMap: { 250: [96], 300: [128], 350: [128], 400: [192], 450: [192], 500: [224], 550: [224], 600: [224] }, 
+                types: [ { id: "UNI", label: "Uniwersalna", minFront: 60 } ], 
+                default: "UNI" 
+            } 
+        }; 
+ 
+        // ---------------- FUNKCJE POMOCNICZE ---------------- //
+        function val(id) { return parseFloat(document.getElementById(id).value) || 0; } 
+        function isChecked(id) { return document.getElementById(id).checked; } 
+        function formatDim(val) { let num = Number(val); return Number.isInteger(num) ? num : parseFloat(num.toFixed(1)); }
 
-        const mats = {
-            'korpus': new THREE.MeshLambertMaterial({ color: 0x90caf9, transparent: true, opacity: 0.6 }),
-            'trawers': new THREE.MeshLambertMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.8 }),
-            'hdf': new THREE.MeshLambertMaterial({ color: 0xffcc80, transparent: true, opacity: 0.7 }),
-            'polkaStal': new THREE.MeshLambertMaterial({ color: 0x2e7d32, transparent: true, opacity: 0.85 }),
-            'polkaRuch': new THREE.MeshLambertMaterial({ color: 0x64b5f6, transparent: true, opacity: 0.75 }),
-            'selected': new THREE.MeshLambertMaterial({ color: 0xffeb3b, transparent: false })
-        };
+        function switchView(mode) {
+            const svgCont = document.getElementById('svgContainer');
+            const tool2D = document.getElementById('toolbar2D');
+            const canCont = document.getElementById('canvas-container');
+            const b2D = document.getElementById('btnView2D');
+            const b3D = document.getElementById('btnView3D');
 
-        // --- GŁÓWNY SILNIK GEOMETRII ---
-        function recalculateGeometry() {
-            const g = state.global; const c = state.config; const p = state.parts;
-            
-            // Czyszczenie operacji
-            for(let key in p) { if(p[key].drillings) p[key].drillings = []; }
-
-            // 1. ZEWNĘTRZNA BRYŁA
-            let botLeftX = (p.bottom.leftJoint === 'nakladany') ? -g.width/2 : -g.width/2 + g.thickness;
-            let botRightX = (p.bottom.rightJoint === 'nakladany') ? g.width/2 : g.width/2 - g.thickness;
-            p.bottom.w = Math.max(botRightX - botLeftX, 0); 
-            p.bottom.h = g.thickness; p.bottom.d = g.depth;
-            p.bottom.x = botLeftX + (p.bottom.w / 2); p.bottom.y = g.baseHeight + g.thickness/2; p.bottom.z = 0;
-
-            if (c.topMode === 'wieniec') { p.top.active = true; p.travFront.active = false; p.travBack.active = false; } 
-            else { p.top.active = false; }
-            
-            let topCabinetY = g.baseHeight + g.height;
-            let topLeftX = (p.top.leftJoint === 'nakladany') ? -g.width/2 : -g.width/2 + g.thickness;
-            let topRightX = (p.top.rightJoint === 'nakladany') ? g.width/2 : g.width/2 - g.thickness;
-            
-            p.top.w = Math.max(topRightX - topLeftX, 0); p.top.h = g.thickness; p.top.d = Math.max(g.depth - p.top.frontOffset, 0); 
-            p.top.x = topLeftX + (p.top.w / 2); p.top.y = topCabinetY - g.thickness/2; p.top.z = -p.top.frontOffset / 2; 
-
-            [p.travFront, p.travBack].forEach(trav => {
-                let tLeftX = (trav.leftJoint === 'nakladany') ? -g.width/2 : -g.width/2 + g.thickness;
-                let tRightX = (trav.rightJoint === 'nakladany') ? g.width/2 : g.width/2 - g.thickness;
-                trav.w = Math.max(tRightX - tLeftX, 0); trav.h = (trav.orient === 'poziom') ? g.thickness : c.traverseWidth; trav.d = (trav.orient === 'poziom') ? c.traverseWidth : g.thickness;
-                trav.x = tLeftX + (trav.w / 2); trav.y = topCabinetY - trav.h/2;
-            });
-            p.travFront.z = g.depth/2 - p.travFront.d/2 - (p.travFront.frontOffset || 0); 
-            if (c.backType === 'nut') { p.travBack.z = -g.depth/2 + c.nutOffset + c.hdfThickness + p.travBack.d/2; } 
-            else { p.travBack.z = -g.depth/2 + p.travBack.d/2; }
-
-            const calcSide = (sideKey, jointBot, jointTop) => {
-                let side = p[sideKey];
-                let bottomY = side.toFloor ? 0 : g.baseHeight;
-                if (jointBot === 'nakladany') bottomY = g.baseHeight + g.thickness; 
-                let topY = topCabinetY;
-                if (c.topMode === 'wieniec' && jointTop === 'nakladany') topY -= g.thickness;
-                if (c.topMode === 'trawersy') {
-                    let maxDrop = 0;
-                    if (p.travFront.active && p.travFront[sideKey === 'leftSide' ? 'leftJoint' : 'rightJoint'] === 'nakladany') maxDrop = Math.max(maxDrop, p.travFront.h);
-                    if (p.travBack.active && p.travBack[sideKey === 'leftSide' ? 'leftJoint' : 'rightJoint'] === 'nakladany') maxDrop = Math.max(maxDrop, p.travBack.h);
-                    topY -= maxDrop;
-                }
-                side.w = g.thickness; side.h = Math.max(topY - bottomY, 0); side.d = g.depth;
-                side.x = (sideKey === 'leftSide') ? (-g.width/2 + g.thickness/2) : (g.width/2 - g.thickness/2);
-                side.y = bottomY + side.h/2; side.z = 0;
-            };
-            calcSide('leftSide', p.bottom.leftJoint, p.top.leftJoint);
-            calcSide('rightSide', p.bottom.rightJoint, p.top.rightJoint);
-
-            p.back.active = (c.backType !== 'brak');
-            if (c.backType === 'nut') {
-                let hdfH = g.height - (2 * g.thickness);
-                p.back.w = Math.max(g.width - (2 * g.thickness), 0); p.back.h = Math.max(hdfH, 0); p.back.d = c.hdfThickness;
-                p.back.x = 0; p.back.y = g.baseHeight + g.thickness + hdfH/2; p.back.z = -g.depth/2 + c.nutOffset + c.hdfThickness/2;
-            } else if (c.backType === 'nakladane') {
-                let hdfH = g.height; p.back.w = g.width; p.back.h = hdfH; p.back.d = c.hdfThickness;
-                p.back.x = 0; p.back.y = g.baseHeight + hdfH/2; p.back.z = -g.depth/2 - c.hdfThickness/2;
-            }
-
-            // 2. WNĘTRZE
-            let floorY = p.bottom.y + p.bottom.h/2; 
-            let ceilY = topCabinetY;
-            if(c.topMode === 'wieniec') ceilY -= g.thickness;
-            else {
-                let drop = 0;
-                if(p.travFront.active) drop = Math.max(drop, p.travFront.h);
-                if(p.travBack.active) drop = Math.max(drop, p.travBack.h);
-                ceilY -= drop;
-            }
-            
-            let totalAvailableH = ceilY - floorY;
-            let shelvesH = state.interior.shelves.length * g.thickness;
-            let netSpaceH = Math.max(0, totalAvailableH - shelvesH);
-            let lockedSum = 0; let unlockedCount = 0;
-            
-            state.interior.spaces.forEach(sp => {
-                if (sp.locked) {
-                    if (lockedSum + sp.val > netSpaceH) { sp.val = Math.max(0, netSpaceH - lockedSum); }
-                    lockedSum += sp.val;
-                } else { unlockedCount++; }
-            });
-
-            if (unlockedCount === 0 && state.interior.spaces.length > 0) {
-                let lastSp = state.interior.spaces[state.interior.spaces.length - 1];
-                lastSp.locked = false; lockedSum -= lastSp.val; unlockedCount = 1;
-            }
-
-            let unlockedSpaceH = Math.max(0, netSpaceH - lockedSum);
-            let autoVal = unlockedCount > 0 ? Math.floor(unlockedSpaceH / unlockedCount) : 0;
-            let remainder = unlockedCount > 0 ? (unlockedSpaceH % unlockedCount) : 0;
-
-            let currentY = floorY;
-            let leftInnerX = p.leftSide.x + p.leftSide.w/2;
-            let rightInnerX = p.rightSide.x - p.rightSide.w/2;
-            let fullInnerW = Math.max(rightInnerX - leftInnerX, 0);
-            let shelfX = (leftInnerX + rightInnerX) / 2;
-
-            let frontLimitZ = g.depth/2 - c.shelfFrontClearance;
-            let backLimitZ = -g.depth/2;
-            if (c.backType === 'nut') backLimitZ = -g.depth/2 + c.nutOffset + c.hdfThickness; 
-            let shelfD = Math.max(frontLimitZ - backLimitZ, 0);
-            let shelfZ = (frontLimitZ + backLimitZ) / 2;
-
-            for(let key in p) { if(key.startsWith('shelf_')) p[key].active = false; }
-
-            for (let i = 0; i < state.interior.spaces.length; i++) {
-                let sp = state.interior.spaces[i];
-                if (!sp.locked) {
-                    sp.val = autoVal;
-                    if (remainder > 0) { sp.val += 1; remainder--; }
-                }
-                currentY += sp.val;
+            if(mode === '2D') {
+                svgCont.style.display = 'flex';
+                tool2D.style.display = 'flex';
+                canCont.style.display = 'none';
+                b2D.classList.add('active');
+                b3D.classList.remove('active');
+            } else {
+                svgCont.style.display = 'none';
+                tool2D.style.display = 'none';
+                canCont.style.display = 'flex';
+                b2D.classList.remove('active');
+                b3D.classList.add('active');
                 
-                if (i < state.interior.shelves.length) {
-                    let shelfData = state.interior.shelves[i];
-                    let sId = 'shelf_' + i;
-                    
-                    if (!p[sId]) p[sId] = { id: sId, active: true, drillings: [], w:0, h:0, d:0, x:0, y:0, z:0 };
-                    
-                    p[sId].active = true;
-                    p[sId].drillings = []; // Reset nawiertów
-                    p[sId].name = shelfData.isFixed ? `Półka Konstrukcyjna ${i+1}` : `Półka Ruchoma ${i+1}`;
-                    p[sId].material = shelfData.isFixed ? 'polkaStal' : 'polkaRuch';
-                    p[sId].h = g.thickness; 
-                    p[sId].w = Math.max(shelfData.isFixed ? fullInnerW : (fullInnerW - (2 * c.shelfSideClearance)), 0);
-                    p[sId].d = shelfD;
-                    p[sId].x = shelfX;
-                    p[sId].z = shelfZ;
-                    p[sId].y = currentY + (g.thickness / 2);
-                    
-                    currentY += g.thickness; 
-                }
+                if(!is3DInitialized) init3D();
+                update3DScene();
             }
         }
 
-        // --- SILNIK NAWIERTÓW (CNC) ---
-        function calculateDrillings() {
-            const g = state.global; const c = state.config; const p = state.parts;
-            
-            const addHole = (partId, x, y, r, label, color) => {
-                if (p[partId]) p[partId].drillings.push({ x: Math.round(x), y: Math.round(y), r, label, color });
-            };
+        // ---------------- INICJALIZACJA 3D (THREE.JS) ---------------- //
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            if(container.clientWidth === 0) return; // Jeśli kontener jest ukryty i ma szerokość 0, nie inicjalizuj
 
-            // SYSTEM 32 - PÓŁKI
-            // Baza dla Boku to Y=0 jako dolna krawędź formatki boku.
-            // Baza dla Boku X=0 to przednia krawędź boku.
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xe8ebed);
             
-            let frontHoleX = 37;
-            let backHoleX = g.depth - 37;
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 1, 10000);
+            camera.position.set(800, 1000, 1500);
             
-            for(let key in p) {
-                if (key.startsWith('shelf_') && p[key].active) {
-                    let shelf = p[key];
-                    
-                    // Wyznaczamy środek grubości półki względem "zera" lewego boku
-                    let leftSideBottomY = p.leftSide.y - p.leftSide.h/2;
-                    let localShelfY = shelf.y - leftSideBottomY; 
-                    
-                    // Generujemy 3 otwory pod każdą półkę
-                    [-32, 0, 32].forEach(dy => {
-                        let isCenter = (dy === 0);
-                        let color = isCenter ? '#e65100' : '#4caf50'; // Środkowy otwór (baza) na pomarańczowo
-                        
-                        addHole('leftSide', frontHoleX, localShelfY + dy, 2.5, 'System 32', color);
-                        addHole('leftSide', backHoleX, localShelfY + dy, 2.5, 'System 32', color);
-                        addHole('rightSide', frontHoleX, localShelfY + dy, 2.5, 'System 32', color);
-                        addHole('rightSide', backHoleX, localShelfY + dy, 2.5, 'System 32', color);
-                    });
-                }
-            }
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+            
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 500, 0);
+            controls.enableDamping = true;
+            
+            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight.position.set(500, 1000, 800);
+            scene.add(dirLight);
 
-            // ZAWIASY
-            if (c.hingeSide === 'leftSide' || c.hingeSide === 'rightSide') {
-                let sideId = c.hingeSide;
-                // Górny prowadnik
-                let hingeTopY = p[sideId].h - c.hingeOffset;
-                addHole(sideId, 37, hingeTopY + 16, 2.5, 'Prowadnik Zawiasu', '#1565c0');
-                addHole(sideId, 37, hingeTopY - 16, 2.5, 'Prowadnik Zawiasu', '#1565c0');
-                
-                // Dolny prowadnik
-                let hingeBotY = c.hingeOffset;
-                addHole(sideId, 37, hingeBotY + 16, 2.5, 'Prowadnik Zawiasu', '#1565c0');
-                addHole(sideId, 37, hingeBotY - 16, 2.5, 'Prowadnik Zawiasu', '#1565c0');
-            }
+            scene.add(new THREE.GridHelper(2000, 20, 0xcccccc, 0xdddddd));
+            
+            cabinetGroup = new THREE.Group();
+            scene.add(cabinetGroup);
 
-            // ZŁĄCZA KONSTRUKCYJNE KORPUSU (Dół i Góra)
-            // Upraszczamy: Wiercimy 50mm od krawędzi przodu i tyłu
-            ['leftSide', 'rightSide'].forEach(sideId => {
-                let side = p[sideId];
-                let isLeft = (sideId === 'leftSide');
-                
-                // Dolny wieniec
-                if (p.bottom.active && p.bottom[isLeft ? 'leftJoint' : 'rightJoint'] === 'wpuszczany') {
-                    let localY = (p.bottom.y - p.bottom.h/2) - (side.y - side.h/2) + g.thickness/2;
-                    addHole(sideId, 50, localY, 4, 'Złącze Konstr.', '#d32f2f');
-                    addHole(sideId, g.depth - 50, localY, 4, 'Złącze Konstr.', '#d32f2f');
-                }
-                
-                // Górny wieniec
-                if (p.top.active && p.top[isLeft ? 'leftJoint' : 'rightJoint'] === 'wpuszczany') {
-                    let localY = (p.top.y - p.top.h/2) - (side.y - side.h/2) + g.thickness/2;
-                    addHole(sideId, 50, localY, 4, 'Złącze Konstr.', '#d32f2f');
-                    addHole(sideId, g.depth - 50, localY, 4, 'Złącze Konstr.', '#d32f2f');
+            is3DInitialized = true;
+            animate3D();
+
+            window.addEventListener('resize', () => { 
+                if(container.clientWidth > 0 && container.clientHeight > 0) {
+                    renderer.setSize(container.clientWidth, container.clientHeight); 
+                    camera.aspect = container.clientWidth / container.clientHeight; 
+                    camera.updateProjectionMatrix(); 
                 }
             });
         }
 
-        // --- RYSUNEK 2D (SVG GENERATOR) ---
-        function openDrawing(partId) {
-            const part = state.parts[partId];
-            if (!part || !part.active) return alert("Ten element jest obecnie niewidoczny w projekcie.");
-            
-            document.getElementById('drawing-title').innerText = `Rysunek Techniczny: ${part.name} (${part.w.toFixed(0)} x ${part.h.toFixed(0)} x ${part.d.toFixed(0)} mm)`;
-            
-            const svg = document.getElementById('drawing-svg');
-            
-            // Konfiguracja SVG. Bok patrzymy z profilu, więc szerokość rysunku to głębokość (d), a wysokość to wysokość boku (h)
-            // Zakładamy, że X to głębokość, Y to wysokość. 
-            // Dodajemy marginesy (padding) na wymiary
-            const padding = 120;
-            const svgW = part.d + padding * 2;
-            const svgH = part.h + padding * 2;
-            
-            svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
-            svg.innerHTML = ''; // Czyszczenie
-            
-            // Definiujemy przesuwanie współrzędnych do środka na marginesy
-            // SVG Y rośnie w dół. Nasze Y=0 to spód płyty. Musimy odwrócić Y!
-            const tX = (x) => padding + x;
-            const tY = (y) => padding + (part.h - y);
-
-            // Rysujemy Formatkę (Prostokąt)
-            let rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            rect.setAttribute("x", padding);
-            rect.setAttribute("y", padding);
-            rect.setAttribute("width", part.d);
-            rect.setAttribute("height", part.h);
-            rect.setAttribute("fill", "#f8f9fa");
-            rect.setAttribute("stroke", "#333");
-            rect.setAttribute("stroke-width", "2");
-            svg.appendChild(rect);
-            
-            // Rysujemy Linia Osi Y=0 (Baza)
-            let baseLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            baseLine.setAttribute("x1", padding - 80); baseLine.setAttribute("y1", tY(0));
-            baseLine.setAttribute("x2", padding + part.d + 80); baseLine.setAttribute("y2", tY(0));
-            baseLine.setAttribute("stroke", "#aaa"); baseLine.setAttribute("stroke-dasharray", "5,5");
-            svg.appendChild(baseLine);
-            
-            let baseText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            baseText.setAttribute("x", padding + part.d + 10); baseText.setAttribute("y", tY(0) + 4);
-            baseText.setAttribute("font-size", "12"); baseText.setAttribute("font-family", "sans-serif"); baseText.setAttribute("font-weight", "bold");
-            baseText.textContent = "0 mm (Baza)";
-            svg.appendChild(baseText);
-
-            // Rysowanie Nawiertów
-            // Grupujemy wymiary Y, żeby narysować wspólne linie
-            let uniqueYs = [...new Set(part.drillings.map(d => d.y))].sort((a,b) => a-b);
-            
-            uniqueYs.forEach(y => {
-                // Linia pomocnicza
-                let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                line.setAttribute("x1", padding - 40); line.setAttribute("y1", tY(y));
-                line.setAttribute("x2", padding + part.d + 40); line.setAttribute("y2", tY(y));
-                line.setAttribute("stroke", "#e0e0e0");
-                svg.appendChild(line);
-                
-                // Tekst wymiaru (po lewej)
-                let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text.setAttribute("x", padding - 45); text.setAttribute("y", tY(y) + 4);
-                text.setAttribute("font-size", "12"); text.setAttribute("font-family", "sans-serif"); text.setAttribute("text-anchor", "end");
-                text.textContent = y;
-                svg.appendChild(text);
-            });
-
-            // Fizyczne Dziury
-            part.drillings.forEach(d => {
-                let circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                circle.setAttribute("cx", tX(d.x));
-                circle.setAttribute("cy", tY(d.y));
-                circle.setAttribute("r", d.r * 1.5); // Powiększenie dla czytelności
-                circle.setAttribute("fill", d.color);
-                
-                let title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-                title.textContent = `${d.label} [X:${d.x}, Y:${d.y}]`;
-                circle.appendChild(title);
-                
-                svg.appendChild(circle);
-            });
-
-            document.getElementById('drawing-overlay').style.display = 'flex';
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            if(controls) controls.update();
+            if(renderer && scene && camera) renderer.render(scene, camera);
         }
 
-        // --- UI INTERIOR MANAGER ---
-        function renderInteriorUI() {
-            let html = '';
-            const spaces = state.interior.spaces;
-            const shelves = state.interior.shelves;
-            let unlockedCount = spaces.filter(s => !s.locked).length;
-            
-            for (let i = spaces.length - 1; i >= 0; i--) {
-                let sp = spaces[i];
-                let label = i === spaces.length - 1 ? 'Światło (Góra)' : (i === 0 ? 'Światło (Dół)' : `Światło ${i+1}`);
-                let isLastAuto = (!sp.locked && unlockedCount === 1);
-                let inputReadonly = isLastAuto ? 'readonly style="background:#e8ebed; border-color:transparent; color:#777;"' : '';
-                
-                let btnHtml = '';
-                if (sp.locked) { btnHtml = `<button class="btn-lock locked" onclick="toggleLock(${i})">Odblokuj</button>`; } 
-                else {
-                    if (isLastAuto) btnHtml = `<button class="btn-lock disabled-auto" disabled title="To światło wchłania resztę.">Auto (Reszta)</button>`;
-                    else btnHtml = `<button class="btn-lock unlocked" onclick="toggleLock(${i})">Zablokuj</button>`;
-                }
+        function update3DScene() {
+            if(!is3DInitialized || !cabinetGroup) return;
 
-                html += `<div class="space-block"><span style="font-size:0.85rem;">${label}:</span><div><input type="number" value="${sp.val}" ${inputReadonly} onchange="handleSpaceInput(${i}, this.value)"> ${btnHtml}</div></div>`;
-                
-                if (i > 0) {
-                    let sh = shelves[i - 1];
-                    html += `<div class="shelf-divider"><button class="btn-shelf-type ${sh.isFixed ? 'type-fixed' : 'type-movable'}" onclick="toggleShelfType(${i-1})">${sh.isFixed ? '✔ Półka Konstrukcyjna' : 'Półka Ruchoma (Luz)'}</button></div>`;
-                }
+            // Wyczyszczenie starego modelu
+            while(cabinetGroup.children.length > 0){ 
+                cabinetGroup.remove(cabinetGroup.children[0]); 
             }
-            
-            html += `<button class="btn-action" data-action="addSpace">+ Dodaj Moduł / Półkę</button>`;
-            if (spaces.length > 1) { html += `<button class="btn-action" data-action="removeSpace" style="margin-top:5px; background:#ffcdd2; color:#c62828;">- Usuń Moduł (Góra)</button>`; }
-            document.getElementById('interiorUI').innerHTML = html;
-        }
 
-        function handleInteriorClick(e) {
-            const target = e.target;
-            const action = target.dataset.action;
-            const idx = parseInt(target.dataset.idx, 10);
+            // Pobranie aktualnych wymiarów z inputów 2D
+            let wBox = val('wBox'); 
+            let hBox = val('hBox'); 
+            let dBox = val('dBox'); 
+            let tBoard = val('tBoard');
+            let cokol = val('cokol');
+            let kTyp = document.getElementById('kTyp').value;
+            let backType = document.getElementById('backType').value;
+            let grPlecy = val('grPlecy');
+            let nutDepth = val('nutDepth');
 
-            if (target.matches('.btn-lock')) { state.interior.spaces[idx].locked = !state.interior.spaces[idx].locked; }
-            else if (target.matches('.btn-shelf-type')) { state.interior.shelves[idx].isFixed = !state.interior.shelves[idx].isFixed; }
-            else if (action === 'addSpace') { let nextId = state.interior.spaces.length + 1; state.interior.spaces.push({ id: 'sp_'+nextId, locked: false, val: 0 }); state.interior.shelves.push({ id: 'sh_'+(nextId-1), isFixed: false }); }
-            else if (action === 'removeSpace') { if (state.interior.spaces.length > 1) { state.interior.spaces.pop(); state.interior.shelves.pop(); } }
-            else return;
-            updateScene();
-        }
+            // Materiały
+            const matKorpus = new THREE.MeshLambertMaterial({ color: 0x90caf9, transparent: true, opacity: 0.6 });
+            const matFront = new THREE.MeshLambertMaterial({ color: 0xa8e6cf, transparent: true, opacity: 0.85 });
+            const matPolka = new THREE.MeshLambertMaterial({ color: 0xffd3b6, transparent: true, opacity: 0.75 });
+            const matHDF = new THREE.MeshLambertMaterial({ color: 0xffcc80, transparent: true, opacity: 0.5 });
+            const edgeMat = new THREE.LineBasicMaterial({ color: 0x153a5b, linewidth: 1 });
 
-        // --- KLASA 3D ---
-        class CabinetPart {
-            constructor(partData) {
-                this.id = partData.id;
-                this.baseMaterial = mats[partData.material];
-                if(!this.baseMaterial) throw new Error(`Nie znaleziono materiału: ${partData.material}`);
-                
-                const geom = new THREE.BoxGeometry(1, 1, 1);
-                this.mesh = new THREE.Mesh(geom, this.baseMaterial.clone());
+            // Funkcja pomocnicza do tworzenia elementu
+            function addPart(w, h, d, x, y, z, mat) {
+                const geom = new THREE.BoxGeometry(w, Math.max(h, 0.1), Math.max(d, 0.1));
+                const mesh = new THREE.Mesh(geom, mat);
                 const edges = new THREE.EdgesGeometry(geom);
-                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x153a5b, linewidth: 2 }));
-                this.mesh.add(line);
-                this.mesh.userData = { id: this.id, isPart: true };
-                this.update(partData);
+                const line = new THREE.LineSegments(edges, edgeMat);
+                mesh.add(line);
+                mesh.position.set(x, y, z);
+                cabinetGroup.add(mesh);
             }
-            update(partData) {
-                this.mesh.visible = partData.active;
-                const correctMaterial = mats[partData.material];
-                if (this.baseMaterial !== correctMaterial) {
-                    this.baseMaterial = correctMaterial;
-                    this.mesh.material = this.baseMaterial;
-                }
 
-                let w = (isFinite(partData.w) && partData.w > 0) ? partData.w : 0.01;
-                let h = (isFinite(partData.h) && partData.h > 0) ? partData.h : 0.01;
-                let d = (isFinite(partData.d) && partData.d > 0) ? partData.d : 0.01;
-                let px = isFinite(partData.x) ? partData.x : 0;
-                let py = isFinite(partData.y) ? partData.y : 0;
-                let pz = isFinite(partData.z) ? partData.z : 0;
+            // --- BAZOWE WYMIARY BRYŁY ---
+            // W 3D ustawmy X=0 jako środek szerokości szafki, Y=0 jako podłogę, Z=0 jako tył korpusu (plecy)
+            let sideBot = (kTyp === 'nakladane') ? cokol + tBoard : 0;
+            let sideTop = (kTyp === 'nakladane') ? hBox - tBoard : hBox;
+            let sideH = sideTop - sideBot;
+
+            // 1. Boki
+            addPart(tBoard, sideH, dBox, -wBox/2 + tBoard/2, sideBot + sideH/2, dBox/2, matKorpus); // Bok Lewy
+            addPart(tBoard, sideH, dBox, wBox/2 - tBoard/2, sideBot + sideH/2, dBox/2, matKorpus); // Bok Prawy
+
+            // 2. Wieńce (Dół i Góra)
+            let wWieniec = (kTyp === 'nakladane') ? wBox : wBox - 2*tBoard;
+            addPart(wWieniec, tBoard, dBox, 0, cokol + tBoard/2, dBox/2, matKorpus); // Dno
+            addPart(wWieniec, tBoard, dBox, 0, hBox - tBoard/2, dBox/2, matKorpus); // Góra
+
+            // 3. Cokół (Front i opcjonalnie Tył)
+            if(cokol > 0) {
+                addPart(wBox, cokol, tBoard, 0, cokol/2, dBox - tBoard/2, matKorpus); // Cokół przedni
+            }
+
+            // 4. Plecy (HDF)
+            let backW = (backType === 'nut') ? (wBox - 2*tBoard + 2*nutDepth) : wBox;
+            let backH = (backType === 'nut') ? (hBox - 2*tBoard + 2*nutDepth) : hBox;
+            let backZ = (backType === 'nut') ? nutDepth + grPlecy/2 : -grPlecy/2;
+            let backY = (backType === 'nut') ? cokol + tBoard + (hBox - cokol - 2*tBoard)/2 : hBox/2;
+            
+            if (backType === 'nakladane') {
+                backH = sideH;
+                backY = sideBot + sideH/2;
+            }
+            
+            addPart(backW, backH, grPlecy, 0, backY, backZ, matHDF);
+
+            // 5. Półki (z tablicy wygenerowanej w 2D)
+            if (window.lastOsie && window.lastOsie.length > 0) {
+                window.lastOsie.forEach(osData => {
+                    // osData.spod jest odległością od DOŁU KORPUSU (Y=0)
+                    let yCenter = osData.spod + tBoard/2; 
+                    let pDepth = dBox - 15; // Zwykle półki są nieco cofnięte
+                    let pZCenter = (dBox - pDepth)/2 + pDepth/2;
+                    addPart(wBox - 2*tBoard, tBoard, pDepth, 0, yCenter, pZCenter, matPolka);
+                });
+            }
+
+            // 6. Fronty / Szuflady (z tablicy frontBlocks w 2D)
+            if (window.lastFrontBlocks && window.lastFrontBlocks.length > 0) {
+                window.lastFrontBlocks.forEach(fb => {
+                    if (fb.layout === 'none') return;
+                    
+                    let fW_full = (wBox - 2*tBoard) + fb.nL + fb.nR;
+                    let leftX = -wBox/2 + tBoard - fb.nL;
+
+                    let drawFrontRect = (fH, fYStart, layout) => {
+                        let wFront = fW_full; let cx = leftX + wFront/2;
+                        if(layout === 'left' || layout === 'right' || layout === 'double') wFront = (fW_full - fb.gap)/2;
+                        if(layout === 'left') cx = leftX + wFront/2;
+                        if(layout === 'right') cx = leftX + wFront + fb.gap + wFront/2;
+                        
+                        let frontZ = dBox + FRONT_THICKNESS/2;
+
+                        if(layout === 'double') {
+                            addPart(wFront, fH, FRONT_THICKNESS, leftX + wFront/2, fYStart + fH/2, frontZ, matFront); // L
+                            addPart(wFront, fH, FRONT_THICKNESS, leftX + wFront + fb.gap + wFront/2, fYStart + fH/2, frontZ, matFront); // R
+                        } else {
+                            addPart(wFront, fH, FRONT_THICKNESS, cx, fYStart + fH/2, frontZ, matFront);
+                        }
+                    };
+
+                    if(fb.type === 'door') {
+                        drawFrontRect(fb.yEnd - fb.yStart, fb.yStart, fb.layout);
+                    } else if(fb.type === 'drawers' && fb.drawers) {
+                        fb.drawers.forEach(dr => {
+                            drawFrontRect(dr.yEnd - dr.yStart, dr.yStart, fb.layout);
+                        });
+                    }
+                });
+            }
+        }
+
+        // ---------------- LOGIKA BIZNESOWA 2D ---------------- //
+
+        function updateTotalDepth() {
+            const dBox = val('dBox');
+            const grPlecy = val('grPlecy');
+            const backType = document.getElementById('backType').value;
+            let totalDepthValue = dBox + FRONT_THICKNESS;
+            if (backType === 'nakladane') {
+                totalDepthValue += grPlecy;
+            }
+            document.getElementById('totalDepth').value = totalDepthValue;
+        }
+
+        function updateDBoxFromTotal() {
+            const totalDepth = val('totalDepth');
+            const grPlecy = val('grPlecy');
+            const backType = document.getElementById('backType').value;
+            let dBox = totalDepth - FRONT_THICKNESS;
+            if (backType === 'nakladane') {
+                dBox -= grPlecy;
+            }
+            if (dBox >= 0) {
+                document.getElementById('dBox').value = dBox;
+            }
+        }
+
+        function toggleBackFields() { 
+            document.getElementById('nutDepthField').style.display = document.getElementById('backType').value === 'nut' ? 'block' : 'none'; 
+        } 
+ 
+        let errorTimeout; 
+        function showError(msg) { 
+            let errBox = document.getElementById('errorBox'); 
+            errBox.innerText = msg; errBox.style.display = 'block'; 
+            clearTimeout(errorTimeout); 
+            errorTimeout = setTimeout(() => { errBox.style.display = 'none'; }, 5000); 
+        } 
+        function hideError() { document.getElementById('errorBox').style.display = 'none'; } 
+ 
+        function initZoomPan() { 
+            const container = document.getElementById('svgContainer'); 
+            container.addEventListener('wheel', (e) => { 
+                e.preventDefault(); 
+                zScale *= Math.exp((e.deltaY < 0 ? 1 : -1) * 0.1); 
+                zScale = Math.min(Math.max(0.1, zScale), 10);  
+                applyTransform(); 
+            }); 
+            container.addEventListener('mousedown', (e) => { 
+                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return; 
+                isDragging = true; startX = e.clientX - panX; startY = e.clientY - panY; 
+            }); 
+            window.addEventListener('mousemove', (e) => { 
+                if (!isDragging) return; panX = e.clientX - startX; panY = e.clientY - startY; applyTransform(); 
+            }); 
+            window.addEventListener('mouseup', () => { isDragging = false; }); 
+            container.addEventListener('mouseleave', () => { isDragging = false; }); 
+        } 
+ 
+        function zoomManual(amount) { zScale = Math.min(Math.max(0.1, zScale + amount), 10); applyTransform(); } 
+        function resetZoom() { zScale = 1; panX = 0; panY = 0; applyTransform(); } 
+        function applyTransform() { document.getElementById('svgWrapper').style.transform = `translate(${panX}px, ${panY}px) scale(${zScale})`; } 
+ 
+        function toggleAutoZaw() { document.getElementById('qZaw').disabled = document.getElementById('autoZaw').checked; run(); } 
+ 
+        function updateDrawerFields() { 
+            let system = document.getElementById('drawerSystem').value; 
+            document.getElementById('customDrawerField').style.display = system === 'custom' ? 'block' : 'none'; 
+        } 
+ 
+        function updateAllDrawersToDefault() { 
+            let sysId = document.getElementById('drawerSystem').value; 
+            let dbSys = DRAWER_DB[sysId]; 
+            spaceLocks.forEach(space => { 
+                if(space.manualFronts) { 
+                    space.manualFronts.forEach(mf => { 
+                        mf.type = dbSys.default; 
+                        let newTypeObj = dbSys.types.find(t => t.id === mf.type); 
+                        if(mf.height < newTypeObj.minFront) mf.height = newTypeObj.minFront; 
+                    }); 
+                } 
+            }); 
+        } 
+ 
+        function getTopHoleOffset() { 
+            let system = document.getElementById('drawerSystem').value; 
+            return system === 'custom' ? val('customDrawerAxis') : parseFloat(system); 
+        } 
+ 
+        function saveCabinet() { 
+            let cab = { 
+                id: Date.now(), 
+                name: document.getElementById('cabName').value || `Szafka ${val('hBox')}x${val('wBox')}`, 
+                kTyp: document.getElementById('kTyp').value, 
+                hBox: val('hBox'), wBox: val('wBox'), dBox: val('dBox'), 
+                luzBocznyPolki: val('luzBocznyPolki'),
+                qPol: val('qPol'), tBoard: val('tBoard'), offsetPodporki: val('offsetPodporki'), cokol: val('cokol'), 
+                qZaw: val('qZaw'), autoZaw: document.getElementById('autoZaw').checked, zOffD: val('zOffD'), zOffG: val('zOffG'), 
+                nTop: val('nTop'), nBottom: val('nBottom'), nLeft: val('nLeft'), nRight: val('nRight'), nWewnetrzne: val('nWewnetrzne'), cMargin: val('cMargin'), 
+                drawerSystem: document.getElementById('drawerSystem').value, 
+                customDrawerAxis: val('customDrawerAxis'), backType: document.getElementById('backType').value, 
+                grPlecy: val('grPlecy'), nutDepth: val('nutDepth'), 
+                spaceLocks: JSON.parse(JSON.stringify(spaceLocks)), 
+                structuralShelves: JSON.parse(JSON.stringify(structuralShelves)) 
+            }; 
+            db.collection("cabinets").add(cab).then(() => { alert("Projekt zapisany!"); }).catch((error) => { alert("Błąd: " + error.message); }); 
+        } 
+ 
+        function updateCabinet() { 
+            if (!currentLoadedDocId) return; 
+            let cab = { 
+                name: document.getElementById('cabName').value || `Szafka ${val('hBox')}x${val('wBox')}`, 
+                kTyp: document.getElementById('kTyp').value, 
+                hBox: val('hBox'), wBox: val('wBox'), dBox: val('dBox'), 
+                luzBocznyPolki: val('luzBocznyPolki'),
+                qPol: val('qPol'), tBoard: val('tBoard'), offsetPodporki: val('offsetPodporki'), cokol: val('cokol'), 
+                qZaw: val('qZaw'), autoZaw: document.getElementById('autoZaw').checked, zOffD: val('zOffD'), zOffG: val('zOffG'), 
+                nTop: val('nTop'), nBottom: val('nBottom'), nLeft: val('nLeft'), nRight: val('nRight'), nWewnetrzne: val('nWewnetrzne'), cMargin: val('cMargin'), 
+                drawerSystem: document.getElementById('drawerSystem').value, 
+                customDrawerAxis: val('customDrawerAxis'), backType: document.getElementById('backType').value, 
+                grPlecy: val('grPlecy'), nutDepth: val('nutDepth'), 
+                spaceLocks: JSON.parse(JSON.stringify(spaceLocks)), 
+                structuralShelves: JSON.parse(JSON.stringify(structuralShelves)) 
+            }; 
+            db.collection("cabinets").doc(currentLoadedDocId).update(cab).then(() => { alert("Zaktualizowano!"); }).catch((error) => { alert("Błąd: " + error.message); }); 
+        } 
+         
+        function loadCabinet(docId) { 
+            let cab = cloudCabinets.find(c => c.docId === docId); 
+            if(!cab) return; 
+            document.getElementById('cabName').value = cab.name; document.getElementById('kTyp').value = cab.kTyp; 
+            ['hBox','wBox','dBox','qPol','tBoard','offsetPodporki','qZaw','zOffD','zOffG'].forEach(id => { document.getElementById(id).value = cab[id]; }); 
+            document.getElementById('cokol').value = cab.cokol !== undefined ? cab.cokol : 100; 
+            document.getElementById('autoZaw').checked = cab.autoZaw !== undefined ? cab.autoZaw : true; 
+            document.getElementById('luzBocznyPolki').value = cab.luzBocznyPolki !== undefined ? cab.luzBocznyPolki : 1;
+            document.getElementById('qZaw').disabled = document.getElementById('autoZaw').checked; 
+            document.getElementById('cMargin').value = cab.cMargin !== undefined ? cab.cMargin : 35; 
+            
+            let defaultOuter = cab.nSkrajne !== undefined ? cab.nSkrajne : (cab.fLuzD !== undefined ? (cab.tBoard - cab.fLuzD) : 15);
+            document.getElementById('nTop').value = cab.nTop !== undefined ? cab.nTop : defaultOuter;
+            document.getElementById('nBottom').value = cab.nBottom !== undefined ? cab.nBottom : defaultOuter;
+            document.getElementById('nLeft').value = cab.nLeft !== undefined ? cab.nLeft : defaultOuter;
+            document.getElementById('nRight').value = cab.nRight !== undefined ? cab.nRight : defaultOuter;
+            document.getElementById('nWewnetrzne').value = cab.nWewnetrzne !== undefined ? cab.nWewnetrzne : (cab.luzFrontow !== undefined ? (cab.tBoard - cab.luzFrontow)/2 : 8);
+            
+            document.getElementById('backType').value = cab.backType !== undefined ? cab.backType : 'nakladane'; 
+            document.getElementById('grPlecy').value = cab.grPlecy !== undefined ? cab.grPlecy : 3;
+            document.getElementById('nutDepth').value = cab.nutDepth !== undefined ? cab.nutDepth : 12; 
+             
+            toggleBackFields(); 
+            let loadedSys = cab.drawerSystem !== undefined ? cab.drawerSystem : "44"; 
+            document.getElementById('drawerSystem').value = loadedSys; 
+            document.getElementById('customDrawerAxis').value = cab.customDrawerAxis !== undefined ? cab.customDrawerAxis : 44; 
+            updateDrawerFields(); 
+            let sysObj = DRAWER_DB[loadedSys]; 
+ 
+            spaceLocks = cab.spaceLocks.map(s => { 
+                let mFronts = s.manualFronts || [200, 200, 200]; 
+                mFronts = mFronts.map(f => { 
+                    if (typeof f === 'number') return { height: f, type: sysObj.default }; 
+                    return { height: f.height, type: f.type || sysObj.default }; 
+                }); 
+                return { 
+                    locked: s.locked || false, manualVal: s.manualVal || 0, currentVal: s.currentVal || 0, 
+                    hasDrawers: s.hasDrawers || false, frontType: s.frontType || (s.hasDrawers ? 'drawers' : 'merged'),
+                    frontLayout: s.frontLayout || 'full', drawerMode: s.drawerMode || 'auto', qDrawers: s.qDrawers || 3, 
+                    manualFronts: mFronts, topGapToAxis: s.topGapToAxis !== undefined ? s.topGapToAxis : 12,
+                    gapTop: s.gapTop || 0, gapBottom: s.gapBottom || 0,
+                    nT: s.nT, nB: s.nB, nL: s.nL, nR: s.nR, gap: s.gap, 
+                    manualDrawerNL: s.manualDrawerNL || {} 
+                }; 
+            }); 
+            structuralShelves = cab.structuralShelves || new Array(val('qPol')).fill(false); 
+            currentLoadedDocId = docId; document.getElementById('btnUpdate').style.display = 'block'; 
+            updateTotalDepth();
+            run(); window.scrollTo(0, 0);  
+        } 
+ 
+        function deleteCabinet(docId) { if(!confirm("Usunąć ten projekt?")) return; db.collection("cabinets").doc(docId).delete(); } 
+ 
+        function renderSavedCabinets() {
+            db.collection("cabinets").onSnapshot((querySnapshot) => { 
+                cloudCabinets = []; 
+                let listHtml = querySnapshot.empty ? '<p style="color:#777;">Brak zapisanych projektów.</p>' : ''; 
+                querySnapshot.forEach((doc) => { 
+                    let cab = doc.data(); cab.docId = doc.id; cloudCabinets.push(cab); 
+                    let locksInfo = cab.spaceLocks ? cab.spaceLocks.filter(s => s.locked).length : 0; 
+                    listHtml += ` 
+                        <div class="saved-item"> 
+                            <h4>${cab.name}</h4> 
+                            <p>Gabaryt: ${cab.hBox}x${cab.wBox}x${cab.dBox} mm<br>Półki: ${cab.qPol} | Blokady: ${locksInfo}</p> 
+                            <div class="saved-actions"> 
+                                <button class="btn-load" onclick="loadCabinet('${cab.docId}')">Wczytaj</button> 
+                                <button class="btn-delete" onclick="deleteCabinet('${cab.docId}')">Usuń</button> 
+                            </div> 
+                        </div>`; 
+                }); 
+                document.getElementById('savedList').innerHTML = listHtml; 
+            }); 
+        }
+ 
+        function printView() { 
+            let type = document.getElementById('printType').value; 
+            let svgNode = document.querySelector('#svgWrapper svg').cloneNode(true); 
+            let hBox = val('hBox'); let wBox = val('wBox'); let dBox = val('dBox'); 
+            let sXBok = wBox + 300; let sXFront = sXBok + dBox + 1200;  
+ 
+            svgNode.querySelectorAll('.hide-on-print').forEach(el => el.remove());
+            if (type === 'interior') svgNode.setAttribute('viewBox', `-100 -120 ${wBox + 200} ${hBox + 250}`); 
+            else if (type === 'side') svgNode.setAttribute('viewBox', `${sXBok - 200} -120 ${dBox + 900} ${hBox + 250}`); 
+            else if (type === 'front') svgNode.setAttribute('viewBox', `${sXFront - 100} -120 ${wBox + 300} ${hBox + 250}`);
+            
+            let printArea = document.getElementById('printArea');
+            if (!printArea) {
+                printArea = document.createElement('div');
+                printArea.id = 'printArea';
+                document.body.appendChild(printArea);
+            }
+            printArea.innerHTML = ''; printArea.appendChild(svgNode); window.print(); 
+        } 
+ 
+        function toggleLock(index) { 
+            hideError(); 
+            if(spaceLocks[index].locked) spaceLocks[index].locked = false; 
+            else { 
+                if (spaceLocks.filter(s => s.locked).length >= spaceLocks.length - 1) { showError("Zostaw min. 1 wymiar auto."); return; } 
+                spaceLocks[index].locked = true; spaceLocks[index].manualVal = spaceLocks[index].currentVal; 
+            } 
+            run(); 
+        } 
+         
+        function changeFrontType(index, type) { 
+            if (type === 'drawers') { spaceLocks[index].hasDrawers = true; spaceLocks[index].frontType = 'drawers'; } 
+            else { spaceLocks[index].hasDrawers = false; spaceLocks[index].frontType = type; } 
+            run(); 
+        }
+        function changeFrontLayout(index, layout) { spaceLocks[index].frontLayout = layout; run(); }
+        function toggleStructural(index) { structuralShelves[index] = !structuralShelves[index]; run(); } 
+        function changeDrawerMode(index, mode) { 
+            spaceLocks[index].drawerMode = mode; 
+            if(mode === 'manual') spaceLocks[index].locked = true; 
+            run(); 
+        } 
+        function updateDrawerCount(index, value) { let q = parseInt(value); if(!isNaN(q) && q > 0) spaceLocks[index].qDrawers = q; run(); } 
+        function updateDrawerNL(spaceIdx, drawerIdx, value) { 
+            if(!spaceLocks[spaceIdx].manualDrawerNL) spaceLocks[spaceIdx].manualDrawerNL = {}; 
+            spaceLocks[spaceIdx].manualDrawerNL[drawerIdx] = value; run(); 
+        } 
+        function updateGap(index, type, val) { spaceLocks[index][type] = parseFloat(val) || 0; run(); }
+        function updateSpaceVal(index, key, val) {
+            if (val === '') delete spaceLocks[index][key];
+            else spaceLocks[index][key] = parseFloat(val);
+            run();
+        }
+
+        function updateFrontHeight(spaceIdx, frontIdx, value) { 
+            let v = parseFloat(value); if(isNaN(v) || v <= 0) return; 
+            spaceLocks[spaceIdx].manualFronts[frontIdx].height = v; 
+            run(); 
+        } 
+
+        function updateDrawerType(spaceIdx, frontIdx, typeVal) { 
+            spaceLocks[spaceIdx].manualFronts[frontIdx].type = typeVal; 
+            run(); 
+        } 
+
+        function shrinkFront(spaceIdx, frontIdx) { 
+            let sys = DRAWER_DB[document.getElementById('drawerSystem').value]; 
+            let front = spaceLocks[spaceIdx].manualFronts[frontIdx]; 
+            let typeObj = sys.types.find(t => t.id === front.type); 
+            if (typeObj) { 
+                let i = spaceIdx; let fIdx = frontIdx;
+                let tBoard = val('tBoard'); let nTop = val('nTop'); let nBottom = val('nBottom'); let nWewnetrzne = val('nWewnetrzne');
                 
-                this.mesh.scale.set(w, h, d);
-                this.mesh.position.set(px, py, pz);
-            }
-            select() { this.mesh.material = mats['selected']; }
-            deselect() { this.mesh.material = this.baseMaterial; }
-        }
-
-        const container = document.getElementById('canvas-container');
-        let startW = container.clientWidth || 800; let startH = container.clientHeight || 600;
-        
-        const scene = new THREE.Scene(); scene.background = new THREE.Color(0xe8ebed);
-        const camera = new THREE.PerspectiveCamera(45, startW / startH, 1, 10000);
-        camera.position.set(800, 700, 1200);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(startW, startH);
-        container.appendChild(renderer.domElement);
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.target.set(0, 400, 0); controls.enableDamping = true;
-
-        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5); dirLight.position.set(500, 1000, 800); scene.add(dirLight);
-        const cabinetGroup = new THREE.Group(); scene.add(cabinetGroup);
-        scene.add(new THREE.GridHelper(2000, 20, 0xcccccc, 0xdddddd));
-        const sceneParts = {};
-
-        function updateScene() {
-            try {
-                document.getElementById('error-overlay').style.display = 'none';
-                recalculateGeometry();
-                calculateDrillings(); // ODPALENIE SILNIKA NAWIERTÓW
+                let isSplitArr = [];
+                let qPol = val('qPol'); let totalSpaces = qPol + 1;
+                for(let k = 0; k < totalSpaces; k++) {
+                    isSplitArr[k] = (spaceLocks[k].currentVal === 0 && k > 0 && k < qPol && structuralShelves[k-1] && structuralShelves[k]);
+                }
                 
-                for (const key in state.parts) {
-                    const data = state.parts[key];
-                    if(data.active) {
-                        if (!sceneParts[key]) { sceneParts[key] = new CabinetPart(data); cabinetGroup.add(sceneParts[key].mesh); }
-                        else { sceneParts[key].update(data); }
-                    } else if (sceneParts[key]) { sceneParts[key].update(data); }
+                let isFirstInModule = (i === 0) || (i > 0 && isSplitArr[i-1]);
+                let isLastInModule = (i === totalSpaces - 1) || (i < totalSpaces - 1 && isSplitArr[i+1]);
+                
+                let sl = spaceLocks[i];
+                let local_nB = sl.nB !== undefined ? sl.nB : (isFirstInModule ? nBottom : nWewnetrzne);
+                let local_nT = sl.nT !== undefined ? sl.nT : (isLastInModule ? nTop : nWewnetrzne);
+
+                let bottomOvl = (fIdx === 0) ? local_nB : 0;
+                let topOvl = (fIdx === spaceLocks[i].manualFronts.length - 1) ? local_nT : 0;
+                
+                let requiredFrontHeight = typeObj.minFront + bottomOvl + topOvl;
+                front.height = Math.max(requiredFrontHeight, 10);
+            } 
+            run(); 
+        }
+
+        function addManualFront(spaceIdx) { 
+            let sysId = document.getElementById('drawerSystem').value; 
+            let defType = DRAWER_DB[sysId].default; 
+            let defHeight = DRAWER_DB[sysId].types.find(t => t.id === defType).minFront + 20; 
+            spaceLocks[spaceIdx].manualFronts.push({ height: defHeight, type: defType }); 
+            run(); 
+        } 
+        function removeManualFront(spaceIdx) { if(spaceLocks[spaceIdx].manualFronts.length > 1) spaceLocks[spaceIdx].manualFronts.pop(); run(); } 
+        function updateTopGap(spaceIdx, value) { let v = parseFloat(value); if(!isNaN(v)) spaceLocks[spaceIdx].topGapToAxis = v; run(); } 
+ 
+        function handleSpaceInput(index, value) { 
+            let num = parseFloat(value); 
+            if(isNaN(num) || num < 0) { spaceLocks[index].locked = false; hideError(); run(); return; } 
+             
+            let isCurrentlyLocked = spaceLocks[index].locked; 
+            let lockedCount = spaceLocks.filter(s => s.locked).length; 
+            if (!isCurrentlyLocked && lockedCount >= spaceLocks.length - 1) { 
+                showError("Przestrzeń automatyczna/wypadkowa. Odblokuj inne, aby zmienić ten wymiar."); run(); return; 
+            } 
+ 
+            let hBox = val('hBox'); let tBoard = val('tBoard'); let qPol = val('qPol'); let cokol = val('cokol'); 
+            let innerSpace = hBox - 2*tBoard - cokol; 
+            let otherLockedSum = 0; 
+            for(let i = 0; i < spaceLocks.length; i++) if(i !== index && spaceLocks[i].locked) otherLockedSum += spaceLocks[i].manualVal; 
+ 
+            let maxAllowed = innerSpace - (qPol * tBoard) - otherLockedSum; 
+            if (num > maxAllowed) { showError(`Brak miejsca! Max: ${maxAllowed} mm.`); num = maxAllowed; }  
+            else hideError(); 
+ 
+            spaceLocks[index].locked = true; spaceLocks[index].manualVal = num; run(); 
+        } 
+        
+        function showCutList() {
+            let kTyp = document.getElementById('kTyp').value; 
+            let hBox = val('hBox'); let wBox = val('wBox'); let dBox = val('dBox'); let tBoard = val('tBoard'); 
+            let qPol = val('qPol'); let offsetPodporki = val('offsetPodporki'); let cokol = val('cokol'); 
+            let backType = document.getElementById('backType').value; 
+            let nutDepth = val('nutDepth'); let grPlecy = val('grPlecy');
+            let luzBocznyPolki = val('luzBocznyPolki');
+
+            let totalSpaces = qPol + 1;
+            let offsetOdDolu = (kTyp === 'nakladane') ? cokol : tBoard + cokol;
+            let currentBottom = offsetOdDolu;
+            let sideBottom = (kTyp === 'nakladane') ? cokol + tBoard : 0; 
+            let sideTop = (kTyp === 'nakladane') ? hBox - tBoard : hBox;
+            
+            let subCabinetsLocal = [];
+            let curCab = { startY: sideBottom, endY: 0, hasFronts: false };
+            let polkiRuchome = [];
+
+            for(let i = 0; i < totalSpaces; i++) { 
+                let h = spaceLocks[i].currentVal; 
+                let isSplit = (h === 0 && i > 0 && i < qPol && structuralShelves[i-1] && structuralShelves[i]); 
+                
+                if (isSplit) { 
+                    curCab.endY = currentBottom; 
+                    subCabinetsLocal.push(curCab); 
+                    curCab = { startY: currentBottom, endY: 0 }; 
+                } 
+                currentBottom += h;  
+                if (i < qPol) {
+                    if (!structuralShelves[i]) polkiRuchome.push({ os: currentBottom - offsetPodporki });
+                    currentBottom += tBoard;
                 }
-                renderInteriorUI();
-                updateCutList();
-                if(selectedPartId && state.parts[selectedPartId] && state.parts[selectedPartId].active) refreshInspectorDimensions(selectedPartId);
-                else hideInspector();
-            } catch(e) {
-                console.error(e); document.getElementById('error-overlay').style.display = 'block'; document.getElementById('error-overlay').innerHTML = `BŁĄD PRZELICZANIA: ${e.message}`;
-            }
-        }
+            } 
+            curCab.endY = sideTop; 
+            subCabinetsLocal.push(curCab);
 
-        function updateGlobal(param, value) { state.global[param] = parseFloat(value) || 0; updateScene(); }
-        function updateConfig(param, value) { 
-            if (['traverseWidth', 'nutOffset', 'shelfSideClearance', 'shelfFrontClearance', 'hingeOffset'].includes(param)) {
-                state.config[param] = parseFloat(value) || 0; 
-            } else { state.config[param] = value; }
-            if (param === 'topMode' && value === 'trawersy') { state.parts.travFront.active = true; state.parts.travBack.active = true; }
-            updateScene(); 
-        }
-        function updatePart(id, param, value) {
-            if (value === 'true') value = true; if (value === 'false') value = false;
-            if (param === 'frontOffset') value = parseFloat(value) || 0;
-            state.parts[id][param] = value; updateScene();
-            if (param === 'active' && value === false) hideInspector(); else buildInspectorContent(id);
-        }
+            let parts = [];
 
-        function updateCutList() {
-            let html = '<table><tr><th>Element</th><th>Wym. (mm)</th></tr>';
-            for (const key in state.parts) {
-                const p = state.parts[key];
-                if(p.active) {
-                    const dims = [Math.round(p.w), Math.round(p.h), Math.round(p.d)].sort((a,b) => b-a);
-                    html += `<tr><td>${p.name}</td><td>${dims[0]} x ${dims[1]} x ${dims[2]}</td></tr>`;
+            subCabinetsLocal.forEach((cab, i) => {
+                let cabH = cab.endY - cab.startY;
+                let sideH = cabH;
+                
+                let wDno = wBox; let wGora = wBox;
+
+                if (kTyp === 'nakladane') {
+                    if (i === 0) sideH -= tBoard; 
+                    if (i === subCabinetsLocal.length - 1) sideH -= tBoard; 
+                    wDno = (i === 0) ? wBox : wBox - 2*tBoard;
+                    wGora = (i === subCabinetsLocal.length - 1) ? wBox : wBox - 2*tBoard;
+                } else {
+                    wDno = wBox - 2*tBoard; wGora = wBox - 2*tBoard;
                 }
-            }
-            document.getElementById('cutListContainer').innerHTML = html + '</table>';
-        }
 
-        const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2(); let selectedPartId = null;
-        renderer.domElement.addEventListener('pointerdown', (event) => {
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1; mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            
-            const intersects = raycaster.intersectObjects(cabinetGroup.children, true);
-            for (const key in sceneParts) sceneParts[key].deselect();
-            
-            let validObject = null;
-            for (let i = 0; i < intersects.length; i++) {
-                let obj = intersects[i].object;
-                while (obj && (!obj.userData || !obj.userData.isPart)) obj = obj.parent;
-                if (obj && obj.userData.isPart && obj.visible && !obj.userData.id.startsWith('shelf_')) { validObject = obj; break; }
-            }
-            if (validObject) {
-                selectedPartId = validObject.userData.id;
-                sceneParts[selectedPartId].select();
-                buildInspectorContent(selectedPartId);
-            } else { hideInspector(); }
-        });
+                parts.push({ gr: tBoard, mat: "Płyta", nazwa: `Bok (Moduł ${i+1})`, l: formatDim(sideH), w: formatDim(dBox), szt: 2 });
+                parts.push({ gr: tBoard, mat: "Płyta", nazwa: (i===0?"Wieniec Dolny":`Dno konstrukcyjne (M${i+1})`), l: formatDim(wDno), w: formatDim(dBox), szt: 1 });
+                parts.push({ gr: tBoard, mat: "Płyta", nazwa: (i===subCabinetsLocal.length-1?"Wieniec Górny":`Góra konstrukcyjna (M${i+1})`), l: formatDim(wGora), w: formatDim(dBox), szt: 1 });
+                
+                if (i === 0 && cokol > 0) {
+                    parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Cokół (Front/Tył)", l: formatDim(wBox), w: formatDim(cokol), szt: 2 });
+                }
 
-        function buildInspectorContent(id) {
-            const part = state.parts[id]; const c = state.config;
-            document.getElementById('inspector').style.display = 'block'; document.getElementById('ins_name').innerText = part.name;
-            refreshInspectorDimensions(id);
-            let html = '';
-            
-            if (id === 'leftSide' || id === 'rightSide') { html += `<label>Styk z podłogą:</label><select onchange="updatePart('${id}', 'toFloor', this.value)"><option value="false" ${!part.toFloor?'selected':''}>Na cokole / nóżkach</option><option value="true" ${part.toFloor?'selected':''}>Bok schodzi do ziemi</option></select>`; }
-            if (id === 'bottom' || id === 'top') {
-                if (id === 'top') { html += `<label>Skrócenie od frontu (mm):</label><input type="number" value="${part.frontOffset}" data-param="frontOffset"><hr style="border:0; border-top:1px solid #90caf9; margin:10px 0;">`; }
-                html += `<div style="display:flex; gap: 10px;"><div style="flex:1"><label>Lewy styk:</label><select data-param="leftJoint"><option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option></select></div><div style="flex:1"><label>Prawy styk:</label><select data-param="rightJoint"><option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option></select></div></div>`;
-            }
-            else if (id === 'travFront' || id === 'travBack') {
-                html += `<div style="margin-bottom: 10px;"><label style="color: #d32f2f;">Status elementu:</label><select data-param="active"><option value="true" ${part.active?'selected':''}>Włączony</option><option value="false" ${!part.active?'selected':''}>Wyłącz / Usuń</option></select><label>Ułożenie:</label><select data-param="orient"><option value="poziom" ${part.orient==='poziom'?'selected':''}>Na płasko (Poziom)</option><option value="pion" ${part.orient==='pion'?'selected':''}>Na sztorc (Pion)</option></select></div>`;
-                if (id === 'travFront') html += `<label>Odsunięcie od frontu (mm):</label><input type="number" value="${part.frontOffset}" data-param="frontOffset" style="margin-bottom: 10px;">`;
-                html += `<div style="display:flex; gap: 10px;"><div style="flex:1"><label>Lewy styk:</label><select data-param="leftJoint"><option value="wpuszczany" ${part.leftJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.leftJoint==='nakladany'?'selected':''}>Nakładany</option></select></div><div style="flex:1"><label>Prawy styk:</label><select data-param="rightJoint"><option value="wpuszczany" ${part.rightJoint==='wpuszczany'?'selected':''}>Wpuszczany</option><option value="nakladany" ${part.rightJoint==='nakladany'?'selected':''}>Nakładany</option></select></div></div>`;
-            }
-            else if (id === 'back') { if(c.backType === 'nut') html += `<label>Odsunięcie nutu (od krawędzi tyłu):</label><input type="number" value="${c.nutOffset}" id="cfg_nutOffset">`; }
-            document.getElementById('ins_options').innerHTML = html;
-        }
-
-        function refreshInspectorDimensions(id) { document.getElementById('ins_dim').innerText = `${state.parts[id].w.toFixed(1)} x ${state.parts[id].h.toFixed(1)} x ${state.parts[id].d.toFixed(1)} mm`; }
-        function hideInspector() { selectedPartId = null; document.getElementById('inspector').style.display = 'none'; }
-        
-        function animate() { 
-            requestAnimationFrame(animate); 
-            const currW = container.clientWidth; const currH = container.clientHeight;
-            if (currW > 0 && currH > 0 && (camera.aspect !== currW / currH || renderer.getSize(new THREE.Vector2()).width !== currW)) {
-                camera.aspect = currW / currH; camera.updateProjectionMatrix(); renderer.setSize(currW, currH);
-            }
-            if(controls) controls.update(); if(renderer && scene && camera) renderer.render(scene, camera); 
-        }
-        
-        window.addEventListener('resize', () => { 
-            if(container.clientWidth > 0 && container.clientHeight > 0) {
-                renderer.setSize(container.clientWidth, container.clientHeight); camera.aspect = container.clientWidth / container.clientHeight; camera.updateProjectionMatrix(); 
-            }
-        });
-        
-        function initEventListeners() {
-            // Gabaryty
-            document.getElementById('corp_height').addEventListener('input', e => updateGlobal('height', e.target.value));
-            document.getElementById('corp_width').addEventListener('input', e => updateGlobal('width', e.target.value));
-            document.getElementById('corp_depth').addEventListener('input', e => updateGlobal('depth', e.target.value));
-            document.getElementById('corp_thickness').addEventListener('input', e => updateGlobal('thickness', e.target.value));
-            document.getElementById('corp_baseHeight').addEventListener('input', e => updateGlobal('baseHeight', e.target.value));
-
-            // Konfiguracja
-            document.getElementById('cfg_topMode').addEventListener('change', e => updateConfig('topMode', e.target.value));
-            document.getElementById('cfg_backType').addEventListener('change', e => updateConfig('backType', e.target.value));
-            document.getElementById('cfg_shelfFrontClearance').addEventListener('input', e => updateConfig('shelfFrontClearance', e.target.value));
-            document.getElementById('cfg_shelfSideClearance').addEventListener('input', e => updateConfig('shelfSideClearance', e.target.value));
-            document.getElementById('cfg_jointType').addEventListener('change', e => updateConfig('jointType', e.target.value));
-            document.getElementById('cfg_hingeSide').addEventListener('change', e => updateConfig('hingeSide', e.target.value));
-
-            // Przyciski
-            document.getElementById('btn_draw_left').addEventListener('click', () => openDrawing('leftSide'));
-            document.getElementById('btn_draw_right').addEventListener('click', () => openDrawing('rightSide'));
-            document.getElementById('btn_close_drawing').addEventListener('click', () => document.getElementById('drawing-overlay').style.display = 'none');
-
-            // Manager Wnętrza (delegacja)
-            document.getElementById('interiorUI').addEventListener('click', handleInteriorClick);
-            document.getElementById('interiorUI').addEventListener('change', e => {
-                if (e.target.matches('input[type="number"]')) {
-                    const idx = parseInt(e.target.parentElement.parentElement.querySelector('.btn-lock').dataset.idx, 10);
-                    let v = parseFloat(e.target.value);
-                    if(!isNaN(v)) { state.interior.spaces[idx].val = v; state.interior.spaces[idx].locked = true; updateScene(); }
+                let backW = 0; let backH = 0;
+                if (backType === 'nut') {
+                    backW = wBox - 2*tBoard + 2*nutDepth - 2; 
+                    backH = cabH - 2*tBoard + 2*nutDepth - 2; 
+                } else {
+                    backW = wBox - 2;
+                    backH = cabH - 2;
+                }
+                if (backH > 0) {
+                    parts.push({ gr: grPlecy, mat: "HDF", nazwa: `Plecy (Moduł ${i+1})`, l: formatDim(backH), w: formatDim(backW), szt: 1 });
                 }
             });
 
-            // Inspektor (delegacja)
-            document.getElementById('inspector').addEventListener('input', e => {
-                if (e.target.id === 'cfg_nutOffset') updateConfig('nutOffset', e.target.value);
-                else if (e.target.dataset.param) updatePart(selectedPartId, e.target.dataset.param, e.target.value);
+            if (polkiRuchome.length > 0) {
+                parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Półka ruchoma", l: formatDim(wBox - 2*tBoard - luzBocznyPolki), w: formatDim(dBox - offsetPodporki), szt: polkiRuchome.length });
+            }
+
+            if (window.lastFrontBlocks) {
+                window.lastFrontBlocks.forEach((fb, idx) => {
+                    let layout = fb.layout || 'full';
+                    if (layout === 'none') return;
+                    
+                    let fW_full = (wBox - 2*tBoard) + fb.nL + fb.nR;
+                    let fW;
+                    if (layout === 'double' || layout === 'left' || layout === 'right') {
+                        fW = (fW_full - fb.gap) / 2;
+                    } else {
+                        fW = fW_full;
+                    }
+                    
+                    let qtyMult = (layout === 'double') ? 2 : 1;
+                    let layoutText = layout === 'left' ? " (Lewy)" : (layout === 'right' ? " (Prawy)" : (layout === 'double' ? " (L+P)" : ""));
+
+                    if (fb.type === 'door') {
+                        let rectH = fb.yEnd - fb.yStart;
+                        parts.push({ gr: 18, mat: "Płyta", nazwa: `Front Drzwi${layoutText}`, l: formatDim(rectH), w: formatDim(fW), szt: 1 * qtyMult });
+                    } else if (fb.type === 'drawers') {
+                        fb.drawers.forEach((dr, dIdx) => {
+                            let drH = dr.yEnd - dr.yStart;
+                            parts.push({ gr: 18, mat: "Płyta", nazwa: `Front Szuflady ${dIdx+1}${layoutText}`, l: formatDim(drH), w: formatDim(fW), szt: 1 * qtyMult });
+                        });
+                    }
+                });
+            }
+            
+            let tableHtml = `<table class="cut-table">
+                <thead>
+                    <tr>
+                        <th>Nazwa Elementu</th>
+                        <th>Wymiar - Wysokość (H)</th>
+                        <th>Wymiar - Szerokość (W)</th>
+                        <th>Grubość</th>
+                        <th>Ilość</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            parts.sort((a,b) => b.gr - a.gr);
+
+            let currentGr = 0;
+            parts.forEach(p => {
+                if (p.gr !== currentGr) {
+                    tableHtml += `<tr><td colspan="5" class="table-group-header">MATERIAŁ: ${p.mat} ${p.gr} mm</td></tr>`;
+                    currentGr = p.gr;
+                }
+                tableHtml += `
+                    <tr>
+                        <td style="text-align:left; font-weight:bold;">${p.nazwa}</td>
+                        <td>${p.l} mm</td>
+                        <td>${p.w} mm</td>
+                        <td>${p.gr} mm</td>
+                        <td>${p.szt}</td>
+                    </tr>
+                `;
             });
+            tableHtml += `</tbody></table>`;
+
+            document.getElementById('cutListContainer').innerHTML = tableHtml;
+            document.getElementById('cutListModal').style.display = 'flex';
         }
 
-        initEventListeners(); updateScene(); animate();
-    </script>
-</body>
+        function closeCutList() { document.getElementById('cutListModal').style.display = 'none'; }
+ 
+        // ---------------- GŁÓWNA PĘTLA OBLICZENIOWA (2D + SVG) ---------------- //
+        function run() { 
+            let kTyp = document.getElementById('kTyp').value; 
+            let hBox = val('hBox'); let wBox = val('wBox'); let dBox = val('dBox'); let tBoard = val('tBoard'); 
+            let qPol = val('qPol'); let offsetPodporki = val('offsetPodporki'); let cokol = val('cokol'); 
+            let backType = document.getElementById('backType').value; 
+            let nutDepth = val('nutDepth'); let grPlecy = val('grPlecy');
+            let rcMode = isChecked('rcMode');
+ 
+            let sClearance = isChecked('sClearance'); let sShelfAxis = isChecked('sShelfAxis'); 
+            let sShelfHoles = isChecked('sShelfHoles'); let sDistances = isChecked('sDistances'); 
+            let sHingeAxis = isChecked('sHingeAxis'); let sHingeHoles = isChecked('sHingeHoles'); 
+            let sFront = isChecked('sFront'); let sDrawerTopHoles = isChecked('sDrawerTopHoles'); 
+            let sDrawerYDim = isChecked('sDrawerYDim'); 
+ 
+            let topHoleOffset = getTopHoleOffset(); 
+            
+            let nTopGlobal = val('nTop'); 
+            let nBottomGlobal = val('nBottom'); 
+            let nLeftGlobal = val('nLeft'); 
+            let nRightGlobal = val('nRight'); 
+            let nWewGlobal = val('nWewnetrzne');
+            let gapGlobal = tBoard - 2 * nWewGlobal;
+             
+            let globalQZaw = val('qZaw'); 
+            let isAutoZaw = isChecked('autoZaw'); 
+            let sysDB = DRAWER_DB[document.getElementById('drawerSystem').value]; 
+ 
+            let currentLInternal = (backType === 'nut') ? (dBox - 18 - nutDepth) : (dBox - 18); 
+            hideError(); 
+ 
+            let totalSpaces = qPol + 1; 
+            
+            while(spaceLocks.length < totalSpaces) {
+                spaceLocks.push({  
+                    locked: false, manualVal: 0, currentVal: 0, 
+                    hasDrawers: false, frontType: 'merged', frontLayout: 'full', drawerMode: 'auto', qDrawers: 3, 
+                    manualFronts: [ 
+                        { height: 200, type: sysDB.default }, 
+                        { height: 200, type: sysDB.default }, 
+                        { height: 140, type: sysDB.default } 
+                    ], 
+                    topGapToAxis: 12, gapTop: 0, gapBottom: 0, 
+                    manualDrawerNL: {} 
+                }); 
+            }
+            if (spaceLocks.length > totalSpaces) spaceLocks = spaceLocks.slice(0, totalSpaces);
+            while(structuralShelves.length < qPol) structuralShelves.push(false);
+            if (structuralShelves.length > qPol) structuralShelves = structuralShelves.slice(0, qPol);
+            
+            let isSplitArr = [];
+            for(let i = 0; i < totalSpaces; i++) {
+                isSplitArr[i] = (spaceLocks[i].currentVal === 0 && i > 0 && i < qPol && structuralShelves[i-1] && structuralShelves[i]);
+            }
+            
+            for(let i = 0; i < totalSpaces; i++) { 
+                if(spaceLocks[i].hasDrawers && spaceLocks[i].drawerMode === 'manual') { 
+                    let sl = spaceLocks[i];
+                    let isFirstInModule = (i === 0) || (i > 0 && isSplitArr[i-1]);
+                    let isLastInModule = (i === totalSpaces - 1) || (i < totalSpaces - 1 && isSplitArr[i+1]);
+
+                    let def_nB = isFirstInModule ? nBottomGlobal : nWewGlobal;
+                    let def_nT = isLastInModule ? nTopGlobal : nWewGlobal;
+                    let def_gap = gapGlobal;
+
+                    let local_nB = sl.nB !== undefined ? sl.nB : def_nB;
+                    let local_nT = sl.nT !== undefined ? sl.nT : def_nT;
+                    let local_gap = sl.gap !== undefined ? sl.gap : def_gap;
+
+                    let sumFronts = sl.manualFronts.reduce((a,b) => a + b.height, 0); 
+                    let totalLuz = (sl.manualFronts.length - 1) * local_gap; 
+                    let targetFhTotal = sumFronts + totalLuz; 
+
+                    let reqSpace = targetFhTotal - local_nB - local_nT;
+                     
+                    spaceLocks[i].locked = true; 
+                    spaceLocks[i].manualVal = Math.round(reqSpace * 10) / 10; 
+                } 
+            } 
+ 
+            let innerSpace = hBox - 2*tBoard - cokol; 
+            let usedSpace = 0; let unlockedCount = 0; 
+            for(let i = 0; i < totalSpaces; i++) { 
+                if(spaceLocks[i].locked) usedSpace += spaceLocks[i].manualVal;  
+                else unlockedCount++; 
+            } 
+ 
+            let remainingForAuto = innerSpace - (qPol * tBoard) - usedSpace; 
+            let autoVal = (unlockedCount > 0 && remainingForAuto > 0) ? Math.round(remainingForAuto / unlockedCount) : 0; 
+             
+            let accumulatedAuto = 0; 
+            for(let i = 0; i < totalSpaces; i++) { 
+                if(spaceLocks[i].locked) spaceLocks[i].currentVal = spaceLocks[i].manualVal; 
+                else { 
+                    if (unlockedCount === 1) spaceLocks[i].currentVal = remainingForAuto - accumulatedAuto; 
+                    else { spaceLocks[i].currentVal = autoVal; accumulatedAuto += autoVal; unlockedCount--; } 
+                } 
+            } 
+            unlockedCount = spaceLocks.filter(s => !s.locked).length; 
+ 
+            let controlsHtml = ''; 
+            for(let i = 0; i < totalSpaces; i++) {
+                let isTop = (i === totalSpaces - 1); let isBottom = (i === 0); 
+                let label = `Światło ${i+1}` + (isBottom ? ` (Dół)` : (isTop ? ` (Góra)` : ``)); 
+                let isLocked = spaceLocks[i].locked; let isOnlyUnlocked = (!isLocked && unlockedCount === 1); 
+                let isDrawers = spaceLocks[i].hasDrawers; let drawerMode = spaceLocks[i].drawerMode; 
+                let isManual = isDrawers && drawerMode === 'manual'; 
+                
+                let rowClass = 'space-row' + (isLocked ? ' locked' : '') + (isDrawers ? ' drawer-active' : '') + (isOnlyUnlocked && !isDrawers ? ' resultant' : ''); 
+                let btnClass = isLocked ? 'lock-btn locked' : 'lock-btn'; 
+                let btnText = isLocked ? '🔒 Odblokuj' : '🔓 Zablokuj'; 
+                if (isOnlyUnlocked) btnText = '⭐ Wypadkowa'; if (isManual) btnText = '🧱 Bottom-Up'; 
+                let inputProps = (isOnlyUnlocked || isManual) ? 'readonly' : ''; 
+                let btnProps = (isOnlyUnlocked || isManual) ? 'disabled' : `onclick="toggleLock(${i})"`; 
+ 
+                let drawerHtml = `<div class="space-panel-inner">`; 
+                
+                drawerHtml += `
+                    <div class="sp-header-row">
+                        <div class="sp-select-group">
+                            <span>Typ:</span>
+                            <select onchange="changeFrontType(${i}, this.value)">
+                                <option value="merged" ${spaceLocks[i].frontType === 'merged' || (!spaceLocks[i].frontType && !spaceLocks[i].hasDrawers) ? 'selected' : ''}>🚪 Razem (Sklej)</option>
+                                <option value="single" ${spaceLocks[i].frontType === 'single' ? 'selected' : ''}>🚪 Osobny</option>
+                                <option value="drawers" ${spaceLocks[i].hasDrawers ? 'selected' : ''}>🗄️ Szuflady</option>
+                            </select>
+                        </div>
+                        <div class="sp-select-group">
+                            <span>Układ:</span>
+                            <select onchange="changeFrontLayout(${i}, this.value)">
+                                <option value="full" ${spaceLocks[i].frontLayout === 'full' || !spaceLocks[i].frontLayout ? 'selected' : ''}>Pełny (1 szt.)</option>
+                                <option value="left" ${spaceLocks[i].frontLayout === 'left' ? 'selected' : ''}>Lewy</option>
+                                <option value="right" ${spaceLocks[i].frontLayout === 'right' ? 'selected' : ''}>Prawy</option>
+                                <option value="double" ${spaceLocks[i].frontLayout === 'double' ? 'selected' : ''}>Podwójny (L+P)</option>
+                                <option value="none" ${spaceLocks[i].frontLayout === 'none' ? 'selected' : ''}>Brak frontu</option>
+                            </select>
+                        </div>
+                        ${isDrawers ? `
+                        <div class="sp-select-group" style="max-width: 120px;">
+                            <select onchange="changeDrawerMode(${i}, this.value)"> 
+                                <option value="auto" ${drawerMode==='auto'?'selected':''}>Auto</option> 
+                                <option value="manual" ${drawerMode==='manual'?'selected':''}>Własne</option> 
+                            </select>
+                        </div>` : ''} 
+                    </div>`;
+
+                drawerHtml += `
+                    <div class="sp-settings-card">
+                        <span class="sp-settings-title">🛠 Korekty nałożeń i luzów (Zostaw puste dla Auto)</span>
+                        <div class="sp-grid-4">
+                            <label class="sp-input-label"><span>Góra:</span> <input type="number" step="0.5" placeholder="Auto" value="${spaceLocks[i].nT !== undefined ? spaceLocks[i].nT : ''}" onchange="updateSpaceVal(${i}, 'nT', this.value)"></label>
+                            <label class="sp-input-label"><span>Dół:</span> <input type="number" step="0.5" placeholder="Auto" value="${spaceLocks[i].nB !== undefined ? spaceLocks[i].nB : ''}" onchange="updateSpaceVal(${i}, 'nB', this.value)"></label>
+                            <label class="sp-input-label"><span>Lewo:</span> <input type="number" step="0.5" placeholder="Auto" value="${spaceLocks[i].nL !== undefined ? spaceLocks[i].nL : ''}" onchange="updateSpaceVal(${i}, 'nL', this.value)"></label>
+                            <label class="sp-input-label"><span>Prawo:</span> <input type="number" step="0.5" placeholder="Auto" value="${spaceLocks[i].nR !== undefined ? spaceLocks[i].nR : ''}" onchange="updateSpaceVal(${i}, 'nR', this.value)"></label>
+                            
+                            <label class="sp-input-label"><span>Szczelina frontów:</span> <input type="number" step="0.5" placeholder="Auto" value="${spaceLocks[i].gap !== undefined ? spaceLocks[i].gap : ''}" onchange="updateSpaceVal(${i}, 'gap', this.value)"></label>
+                            <label class="sp-input-label"><span>Dodatkowy luz (Top):</span> <input type="number" step="0.5" value="${spaceLocks[i].gapTop || 0}" onchange="updateGap(${i}, 'gapTop', this.value)"></label>
+                            <label class="sp-input-label"><span>Dodatkowy luz (Dół):</span> <input type="number" step="0.5" value="${spaceLocks[i].gapBottom || 0}" onchange="updateGap(${i}, 'gapBottom', this.value)"></label>
+                        </div>
+                    </div>`; 
+ 
+                if (isDrawers) { 
+                    if (drawerMode === 'auto') { 
+                        drawerHtml += `<div style="display:flex; gap: 8px; align-items:center; margin-top:8px;"><span style="font-size:0.8rem; font-weight:bold;">Ilość szuflad:</span><input type="number" value="${spaceLocks[i].qDrawers}" min="1" onchange="updateDrawerCount(${i}, this.value)" style="width: 60px; padding: 4px; text-align:center; border: 1px solid #ccc; border-radius: 4px;"></div>`; 
+                    } else { 
+                        drawerHtml += `<div style="margin-top:10px;">`; 
+                        
+                        let isFirstInModule = (i === 0) || (i > 0 && isSplitArr[i-1]);
+                        let isLastInModule = (i === totalSpaces - 1) || (i < totalSpaces - 1 && isSplitArr[i+1]);
+
+                        let sl = spaceLocks[i];
+                        let local_nB = sl.nB !== undefined ? sl.nB : (isFirstInModule ? nBottomGlobal : nWewGlobal);
+                        let local_nT = sl.nT !== undefined ? sl.nT : (isLastInModule ? nTopGlobal : nWewGlobal);
+                        let local_gap = sl.gap !== undefined ? sl.gap : gapGlobal;
+
+                        spaceLocks[i].manualFronts.forEach((mf, fIdx) => { 
+                            let lbl = (fIdx === 0) ? `F${fIdx+1} (Dół)` : `F${fIdx+1}`; 
+                            let optionsHtml = ''; 
+                             
+                            let bottomOverlap = 0; let topOverlap = 0;
+                            let isAbsoluteBottom = (fIdx === 0);
+                            let isAbsoluteTop = (fIdx === spaceLocks[i].manualFronts.length - 1);
+
+                            if (isAbsoluteBottom) bottomOverlap = local_nB;
+                            if (isAbsoluteTop) topOverlap = local_nT;
+
+                            let availableH = mf.height - bottomOverlap - topOverlap;
+                            if (!isAbsoluteTop) availableH += local_gap; 
+
+                            let currentTypeObj = sysDB.types.find(t => t.id === mf.type);
+                            if (currentTypeObj && availableH < currentTypeObj.minFront) {
+                                let fittingTypes = sysDB.types.filter(t => t.minFront <= availableH);
+                                mf.type = fittingTypes.length > 0 ? fittingTypes[fittingTypes.length - 1].id : sysDB.types[0].id;
+                                currentTypeObj = sysDB.types.find(t => t.id === mf.type);
+                            }
+
+                            let minReq = currentTypeObj ? currentTypeObj.minFront : 0; 
+                            let requiredFrontHeight = minReq + bottomOverlap + topOverlap - (!isAbsoluteTop ? local_gap : 0);
+                            let canShrink = mf.height > requiredFrontHeight; 
+
+                            sysDB.types.forEach(t => { 
+                                let isDisabled = availableH < t.minFront ? 'disabled' : ''; 
+                                let isSelected = mf.type === t.id ? 'selected' : ''; 
+                                optionsHtml += `<option value="${t.id}" ${isDisabled} ${isSelected}>${t.label} (wewn. ${t.minFront})${isDisabled ? ' 🚫' : ''}</option>`; 
+                            });
+                             
+                            let shrinkBtnHtml = canShrink ? `<button type="button" class="btn-small-outline" onclick="shrinkFront(${i}, ${fIdx})" title="Ściśnij front do ${minReq}mm">>< Ściśnij</button>` : ''; 
+ 
+                            if(!spaceLocks[i].manualDrawerNL) spaceLocks[i].manualDrawerNL = {}; 
+                            let currentSavedNL = spaceLocks[i].manualDrawerNL[fIdx]; 
+                             
+                            let autoSelectedNL = sysDB.lengths[0]; 
+                            sysDB.lengths.forEach(len => { 
+                                if(currentLInternal >= (len + sysDB.ltRequired)) autoSelectedNL = len; 
+                            }); 
+                             
+                            let finalActiveNL = currentSavedNL === undefined || currentSavedNL === 'auto' ? autoSelectedNL : parseFloat(currentSavedNL); 
+                             
+                            let selectNLHtml = `<select onchange="updateDrawerNL(${i}, ${fIdx}, this.value)" style="padding: 4px; font-size:0.8rem; border: 1px solid #ccc; border-radius:4px; max-width: 140px;">`; 
+                            selectNLHtml += `<option value="auto">Auto (${autoSelectedNL}mm)</option>`; 
+                             
+                            sysDB.lengths.forEach(len => { 
+                                let isSel = (currentSavedNL !== undefined && currentSavedNL !== 'auto' && parseFloat(currentSavedNL) === len) ? 'selected' : ''; 
+                                selectNLHtml += `<option value="${len}" ${isSel}>${len} mm</option>`; 
+                            }); 
+                            selectNLHtml += `</select>`; 
+
+                            let alertSpan = ''; 
+                            if(currentLInternal < (finalActiveNL + sysDB.ltRequired)) { 
+                                alertSpan = `<span style="color:#d32f2f; font-weight:bold; font-size:0.75rem;">⚠️ Wymaga min. ${finalActiveNL + sysDB.ltRequired}mm</span>`; 
+                                showError(`Błąd konfiguracji! Szuflada w świetle ${i+1} (F${fIdx+1}) jest zbyt długa dla wybranej głębokości korpusu.`); 
+                            } else { 
+                                let freeSpace = currentLInternal - (finalActiveNL + sysDB.ltRequired); 
+                                if(freeSpace > 0) { 
+                                    alertSpan = `<span style="color:#2e7d32; font-size:0.75rem;">Luz: +${Math.round(freeSpace)}mm</span>`; 
+                                } 
+                            } 
+ 
+                            drawerHtml += ` 
+                                <div class="sp-drawer-item"> 
+                                    <div class="sp-drawer-row"> 
+                                        <div style="display:flex; align-items:center; gap: 8px;"> 
+                                            <span style="font-size:0.8rem; font-weight:bold; color:#555; width:55px;">${lbl}:</span> 
+                                            <input type="number" value="${mf.height}" onchange="updateFrontHeight(${i}, ${fIdx}, this.value)" style="width: 60px; padding: 4px; text-align:center; border: 1px solid #ccc; border-radius: 4px;"> 
+                                        </div> 
+                                        <div style="display:flex; align-items:center; gap: 5px;"> 
+                                            <select onchange="updateDrawerType(${i}, ${fIdx}, this.value)" class="sp-select-type" style="padding: 4px; font-size:0.8rem; border-color:#ccc; border-radius:4px;"> 
+                                                ${optionsHtml} 
+                                            </select> 
+                                            ${shrinkBtnHtml} 
+                                        </div> 
+                                    </div> 
+                                    <div class="sp-drawer-row" style="margin-bottom:0; border-top:1px dashed #eee; padding-top:6px;"> 
+                                        <span style="font-size:0.8rem; color:#666;">Prowadnica:</span> 
+                                        <div style="display:flex; align-items:center; gap: 10px;"> 
+                                            ${alertSpan}
+                                            ${selectNLHtml} 
+                                        </div> 
+                                    </div> 
+                                </div>`; 
+                        }); 
+                        drawerHtml += ` 
+                            <div style="display:flex; gap:10px; margin-bottom: 4px;"> 
+                                <button type="button" class="btn-small-outline" onclick="addManualFront(${i})" style="flex:1;">+ Dodaj front</button> 
+                                <button type="button" class="btn-small-outline" onclick="removeManualFront(${i})" style="flex:1; color:#d32f2f; border-color:#fce8e8; background:#fce8e8;">- Usuń dolny</button> 
+                            </div> 
+                        </div>`; 
+                    } 
+                } 
+                drawerHtml += `</div>`; 
+                
+                controlsHtml += `<div class="${rowClass}"><div class="space-header"><div style="flex:1;"><label class="main-label">${label}</label>${drawerHtml}</div><div class="space-input-group" style="align-self: flex-start; margin-top:5px; margin-left: 10px;"><input type="number" value="${spaceLocks[i].currentVal}" onchange="handleSpaceInput(${i}, this.value)" ${inputProps}><button class="${btnClass}" ${btnProps}>${btnText}</button></div></div></div>`; 
+                if (i < totalSpaces - 1) { 
+                    controlsHtml += `<div class="structural-divider"><label><input type="checkbox" ${structuralShelves[i] ? 'checked' : ''} onchange="toggleStructural(${i})"> 🔩 Półka konstrukcyjna (Wirtualne cięcie modułu)</label></div>`; 
+                } 
+            } 
+            document.getElementById('spaceControls').innerHTML = controlsHtml; 
+ 
+            let sideBottom = (kTyp === 'nakladane') ? cokol + tBoard : 0; 
+            let sideTop = (kTyp === 'nakladane') ? hBox - tBoard : hBox; 
+            let offsetOdDolu = (kTyp === 'nakladane') ? cokol : tBoard + cokol; 
+            
+            let osie = []; let spacesBoundary = []; let currentBottom = offsetOdDolu; 
+            let localZeros = []; let visualGaps = []; 
+            let currentZero = sideBottom; 
+            let currentVisualGap = 0; 
+            
+            for(let i = 0; i < totalSpaces; i++) { 
+                let h = spaceLocks[i].currentVal; 
+                let isSplit = isSplitArr[i];
+                if (isSplit) { 
+                    currentVisualGap += 60; 
+                    currentZero = currentBottom; 
+                } 
+                localZeros.push(currentZero); 
+                visualGaps.push(currentVisualGap); 
+                
+                spacesBoundary.push({ 
+                    index: i, hasDrawers: spaceLocks[i].hasDrawers, drawerMode: spaceLocks[i].drawerMode, 
+                    manualFronts: spaceLocks[i].manualFronts, qDrawers: spaceLocks[i].qDrawers, spaceIdx: i, 
+                    yStart: currentBottom, yEnd: currentBottom + h, 
+                    visualGap: currentVisualGap, localZero: currentZero, isSplit: isSplit 
+                }); 
+                currentBottom += h;  
+                if (i < qPol) { 
+                    osie.push({ 
+                        spod: currentBottom, os: currentBottom - offsetPodporki, osPrawdziwa: currentBottom + tBoard/2, 
+                        visualGap: currentVisualGap, localZero: currentZero, isStruct: structuralShelves[i] 
+                    }); 
+                    currentBottom += tBoard; 
+                } 
+            } 
+ 
+            let frontBlocks = []; let currentDoorBlock = null; let doorZawiasy = []; let drawerGuides = [];
+            
+            for(let i = 0; i < totalSpaces; i++) { 
+                let sb = spacesBoundary[i]; 
+                
+                if (sb.isSplit) { 
+                    if (currentDoorBlock) { frontBlocks.push(currentDoorBlock); currentDoorBlock = null; } 
+                    continue; 
+                } 
+                
+                let isFirstInModule = (i === 0) || (i > 0 && spacesBoundary[i-1].isSplit);
+                let isLastInModule = (i === totalSpaces - 1) || (i < totalSpaces - 1 && spacesBoundary[i+1].isSplit);
+                
+                let sl = spaceLocks[i];
+                
+                let def_nB = isFirstInModule ? nBottomGlobal : nWewGlobal;
+                let def_nT = isLastInModule ? nTopGlobal : nWewGlobal;
+                let def_nL = nLeftGlobal;
+                let def_nR = nRightGlobal;
+                let def_gap = gapGlobal;
+
+                let nB = sl.nB !== undefined ? sl.nB : def_nB;
+                let nT = sl.nT !== undefined ? sl.nT : def_nT;
+                let nL = sl.nL !== undefined ? sl.nL : def_nL;
+                let nR = sl.nR !== undefined ? sl.nR : def_nR;
+                let gap = sl.gap !== undefined ? sl.gap : def_gap;
+
+                let localStartY = sb.yStart - nB + (spaceLocks[i].gapBottom || 0);
+                let localEndY = sb.yEnd + nT - (spaceLocks[i].gapTop || 0);
+                let layout = spaceLocks[i].frontLayout || 'full';
+
+                if (sb.hasDrawers) { 
+                    if (currentDoorBlock) { frontBlocks.push(currentDoorBlock); currentDoorBlock = null; } 
+                    frontBlocks.push({ 
+                        type: 'drawers', drawerMode: sl.drawerMode, manualFronts: sl.manualFronts, qDrawers: sl.qDrawers, 
+                        spaceIdx: i, yStart: localStartY, yEnd: localEndY, interiorBottom: sb.yStart, 
+                        visualGap: sb.visualGap, localZero: sb.localZero, layout: layout,
+                        nL: nL, nR: nR, gap: gap
+                    }); 
+                } else { 
+                    let frontType = spaceLocks[i].frontType || 'merged';
+                    if (frontType === 'single') {
+                        if (currentDoorBlock) { frontBlocks.push(currentDoorBlock); currentDoorBlock = null; } 
+                        frontBlocks.push({ type: 'door', yStart: localStartY, yEnd: localEndY, visualGap: sb.visualGap, localZero: sb.localZero, layout: layout, nL: nL, nR: nR, gap: gap });
+                    } else {
+                        if (!currentDoorBlock) {
+                            currentDoorBlock = { type: 'door', yStart: localStartY, yEnd: localEndY, visualGap: sb.visualGap, localZero: sb.localZero, layout: layout, nL: nL, nR: nR, gap: gap }; 
+                        } else {
+                            currentDoorBlock.yEnd = localEndY; 
+                        }
+                    }
+                } 
+            } 
+            if(currentDoorBlock) frontBlocks.push(currentDoorBlock); 
+ 
+            let zOffD = val('zOffD'); let zOffG = val('zOffG');  
+            frontBlocks.forEach(fb => { 
+                let fH_total = fb.yEnd - fb.yStart; 
+                if(fb.type === 'drawers') { 
+                    fb.drawers = []; 
+                    if (fb.drawerMode === 'manual') { 
+                        let sumTargetFronts = fb.manualFronts.reduce((a,b) => a + b.height, 0); 
+                        let totalLuz = (fb.manualFronts.length - 1) * fb.gap; 
+                        let targetFhTotal = sumTargetFronts + totalLuz; 
+                        let diff = fH_total - targetFhTotal; 
+                        let adjustmentPerDrawer = diff / fb.manualFronts.length; 
+
+                        let currY = fb.yStart; 
+                        for(let j=0; j < fb.manualFronts.length; j++) { 
+                            let fH = fb.manualFronts[j].height + adjustmentPerDrawer; 
+                            let dTop = currY + fH; 
+                            let guideTopY = currY + topHoleOffset; 
+                            if (j === 0) { guideTopY = Math.max(guideTopY, fb.interiorBottom + topHoleOffset); } 
+                             
+                            let currentSavedNL = spaceLocks[fb.spaceIdx].manualDrawerNL ? spaceLocks[fb.spaceIdx].manualDrawerNL[j] : 'auto'; 
+                            let autoSelectedNL = sysDB.lengths[0]; 
+                            sysDB.lengths.forEach(len => { 
+                                if(currentLInternal >= (len + sysDB.ltRequired)) autoSelectedNL = len; 
+                            }); 
+                            let activeNL = currentSavedNL === undefined || currentSavedNL === 'auto' ? autoSelectedNL : parseFloat(currentSavedNL); 
+ 
+                            fb.drawers.push({ yStart: currY, yEnd: dTop, guideTop: guideTopY, currentNL: activeNL }); 
+                            drawerGuides.push({ axisYTop: guideTopY, currentNL: activeNL, visualGap: fb.visualGap, localZero: fb.localZero }); 
+                            currY = dTop + fb.gap; 
+                        } 
+                    } else {  
+                        let dFrontH = (fH_total - ((fb.qDrawers - 1) * fb.gap)) / fb.qDrawers; 
+                        let currY = fb.yStart; 
+                        for(let j=0; j < fb.qDrawers; j++) { 
+                            let dTop = currY + dFrontH; let guideTopY = currY + topHoleOffset; 
+                            if (j === 0) { guideTopY = Math.max(guideTopY, fb.interiorBottom + topHoleOffset); } 
+                             
+                            let autoSelectedNL = sysDB.lengths[0]; 
+                            sysDB.lengths.forEach(len => { 
+                                if(currentLInternal >= (len + sysDB.ltRequired)) autoSelectedNL = len; 
+                            }); 
+ 
+                            fb.drawers.push({ yStart: currY, yEnd: dTop, guideTop: guideTopY, currentNL: autoSelectedNL }); 
+                            drawerGuides.push({ axisYTop: guideTopY, currentNL: autoSelectedNL, visualGap: fb.visualGap, localZero: fb.localZero }); 
+                            currY = dTop + fb.gap; 
+                        } 
+                    } 
+                }  
+                else if(fb.type === 'door' && fb.layout !== 'none') { 
+                    let hinges = []; let localQZaw = globalQZaw; 
+                    if (isAutoZaw) { 
+                        if (fH_total <= 900) localQZaw = 2; else if (fH_total <= 1600) localQZaw = 3; else if (fH_total <= 2000) localQZaw = 4; else if (fH_total <= 2500) localQZaw = 5; else localQZaw = 6; 
+                    } 
+                    if (localQZaw > 0) { 
+                        let hgBaseFront = []; 
+                        if (localQZaw === 1) hgBaseFront.push({ offset: fH_total/2, isTop: false }); 
+                        else { 
+                            hgBaseFront.push({ offset: zOffD, isTop: false });  
+                            if (localQZaw > 2) { let step = (fH_total - zOffG - zOffD) / (localQZaw - 1); for (let k = 1; k < localQZaw - 1; k++) hgBaseFront.push({ offset: zOffD + k * step, isTop: false }); } 
+                            hgBaseFront.push({ offset: fH_total - zOffG, isTop: true });  
+                        } 
+                        hgBaseFront.forEach(hg => { 
+                            let mY = fb.yStart + hg.offset; let collision = true; let attempts = 0; let isShifted = false; 
+                            while(collision && attempts < 15) { 
+                                collision = false; 
+                                for (let p of osie) [-32, 0, 32].forEach(off => { if (Math.abs(mY - (p.osPrawdziwa + off)) < val('cMargin')) collision = true; }); 
+                                for (let dg of drawerGuides) if (Math.abs(mY - dg.axisYTop) < val('cMargin')) collision = true; 
+                                if (collision) { isShifted = true; mY += hg.isTop ? -32 : 32; } 
+                                attempts++; 
+                            } 
+                            hinges.push({ bodyY: Math.round(mY), frontY: Math.round(Math.round(mY) - fb.yStart), shifted: isShifted, isTop: hg.isTop, visualGap: fb.visualGap, localZero: fb.localZero }); 
+                        }); 
+                    } 
+                    fb.hinges = hinges; fb.actualZawCount = localQZaw; 
+                    if (fb.layout !== 'right') { doorZawiasy.push(...hinges); }
+                } 
+            }); 
+            
+            // AKTUALIZACJA GLOBALNA DLA 3D
+            window.lastFrontBlocks = frontBlocks;
+            window.lastOsie = osie;
+
+            // --- SVG RENDER --- 
+            let sXCab = 0; let sXBok = wBox + 300; let sXFront = sXBok + dBox + 1200;  
+            let viewTotalW = sFront ? (sXFront + wBox + 500) : (sXBok + dBox + 1000); let viewTotalH = hBox + currentVisualGap + 300;         
+            let svg = `<svg viewBox="-150 -150 ${viewTotalW} ${viewTotalH}" class="svg-drawing" xmlns="http://www.w3.org/2000/svg">`; 
+            svg += `<defs><marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1.5 L 10 5 L 0 8.5 Z" fill="#4a5568" /></marker><marker id="arrow-red" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1.5 L 10 5 L 0 8.5 Z" fill="#e53e3e" /></marker><marker id="arrow-green" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1.5 L 10 5 L 0 8.5 Z" fill="#38a169" /></marker></defs>`; 
+            let fontL = 28; let fontM = 24; let fontS = 20; let lineW = 3; 
+ 
+            svg += `<text x="${sXCab + wBox/2}" y="-80" font-size="36" font-weight="bold" fill="#1F4E79" text-anchor="middle">KORPUS WNĘTRZE</text>`; 
+            svg += `<text x="${sXBok + dBox/2}" y="-80" font-size="36" font-weight="bold" fill="#1F4E79" text-anchor="middle">BOK SZAFY</text>`; 
+            svg += `<circle cx="${sXBok + 20}" cy="-120" r="3" fill="#333"/><text x="${sXBok + 35}" y="-112" font-size="${fontM}" fill="#555">Wkręt (Ø 3 mm)</text>`; 
+            svg += `<circle cx="${sXBok + 230}" cy="-120" r="5" fill="#2e7d32"/><text x="${sXBok + 245}" y="-112" font-size="${fontM}" fill="#555">Kołek / Konfirmat (Ø 8 mm)</text>`; 
+ 
+            let innerX = sXCab + tBoard; let innerW = wBox - 2*tBoard; let centerX = sXCab + wBox/2; 
+            
+            let dystansTyl = (backType === 'nut') ? (nutDepth + grPlecy + 37) : 37;
+            let hBackX = sXBok + dystansTyl; 
+            let hFrontX = sXBok + dBox - 37; 
+            let plecyX_Bok = (backType === 'nut') ? (sXBok + nutDepth) : (sXBok - grPlecy);
+            let grFrontuWizualna = 18;
+            let frontX_Bok = sXBok + dBox;
+            let laneHingeHoles = sXBok + dBox + 40;  
+            let laneShelfHoles = sXBok + dBox + 150; 
+            let laneHingeAxis = sXBok + dBox + 150;  
+ 
+            let subCabinets = []; 
+            let curCab = { startY: sideBottom, endY: 0, visualGap: 0, localZero: sideBottom }; 
+            for(let i = 0; i < totalSpaces; i++) { 
+                let sb = spacesBoundary[i]; 
+                if (sb.visualGap !== curCab.visualGap) { 
+                    curCab.endY = sb.yStart; 
+                    subCabinets.push(curCab); 
+                    curCab = { startY: sb.yStart, endY: 0, visualGap: sb.visualGap, localZero: sb.localZero }; 
+                } 
+                if (i === totalSpaces - 1) { 
+                    curCab.endY = sideTop; 
+                } 
+            } 
+            subCabinets.push(curCab); 
+            
+            subCabinets.forEach((cab, idx) => { 
+                let cH = cab.endY - cab.startY; 
+                let svgTopY = hBox - cab.endY - cab.visualGap; 
+                
+                if(kTyp === 'wpuszczane') { 
+                    svg += `<rect x="${sXCab}" y="${svgTopY}" width="${tBoard}" height="${cH}" fill="#f9fbfd" stroke="#333" stroke-width="${lineW}"/>`; 
+                    svg += `<rect x="${sXCab + wBox - tBoard}" y="${svgTopY}" width="${tBoard}" height="${cH}" fill="#f9fbfd" stroke="#333" stroke-width="${lineW}"/>`; 
+                    if (idx === 0) svg += `<rect x="${innerX}" y="${hBox - cokol - tBoard}" width="${innerW}" height="${tBoard}" fill="#e8f0fe" stroke="#1F4E79" stroke-width="${lineW}"/>`; 
+                    if (idx === subCabinets.length - 1) svg += `<rect x="${innerX}" y="${svgTopY}" width="${innerW}" height="${tBoard}" fill="#e8f0fe" stroke="#1F4E79" stroke-width="${lineW}"/>`; 
+                } else { 
+                    let sideH = cH; let sY = svgTopY; 
+                    if (idx === 0) { sideH -= tBoard; }  
+                    if (idx === subCabinets.length - 1) { sideH -= tBoard; sY += tBoard; } 
+                    svg += `<rect x="${sXCab}" y="${sY}" width="${tBoard}" height="${sideH}" fill="#f9fbfd" stroke="#333" stroke-width="${lineW}"/>`; 
+                    svg += `<rect x="${sXCab + wBox - tBoard}" y="${sY}" width="${tBoard}" height="${sideH}" fill="#f9fbfd" stroke="#333" stroke-width="${lineW}"/>`; 
+                    if (idx === 0) svg += `<rect x="${sXCab}" y="${hBox - cokol - tBoard}" width="${wBox}" height="${tBoard}" fill="#e8f0fe" stroke="#1F4E79" stroke-width="${lineW}"/>`; 
+                    if (idx === subCabinets.length - 1) svg += `<rect x="${sXCab}" y="${svgTopY}" width="${wBox}" height="${tBoard}" fill="#e8f0fe" stroke="#1F4E79" stroke-width="${lineW}"/>`; 
+                } 
+ 
+                svg += `<rect x="${sXBok}" y="${svgTopY}" width="${dBox}" height="${cH}" fill="#f9fbfd" stroke="#333" stroke-width="${lineW}"/>`; 
+                svg += `<rect x="${plecyX_Bok}" y="${svgTopY}" width="${grPlecy}" height="${cH}" fill="#e0e0e0" stroke="#757575" stroke-width="1" class="hide-on-print"/>`; 
+                svg += `<rect x="${frontX_Bok}" y="${svgTopY}" width="${grFrontuWizualna}" height="${cH}" fill="#e2efda" stroke="#2e7d32" stroke-width="1" opacity="0.8" class="hide-on-print"/>`; 
+                
+                svg += `<line x1="${sXCab - 50}" y1="${hBox - cab.startY - cab.visualGap}" x2="${sXBok + dBox + 150}" y2="${hBox - cab.startY - cab.visualGap}" stroke="#333" stroke-width="2" stroke-dasharray="8,8" opacity="0.6"/><text x="${sXBok + dBox + 160}" y="${hBox - cab.startY - cab.visualGap + 8}" font-size="${fontL}" font-weight="bold" fill="#333" text-anchor="start">0 mm (Baza modułu)</text>`; 
+            }); 
+            
+            svg += `<text x="${sXBok - 20}" y="${hBox/2}" font-size="${fontM}" font-weight="bold" fill="#888" text-anchor="middle" transform="rotate(-90 ${sXBok - 20} ${hBox/2})">TYŁ BOKU</text><text x="${sXBok + dBox + 20}" y="${hBox/2}" font-size="${fontM}" font-weight="bold" fill="#888" text-anchor="middle" transform="rotate(90 ${sXBok + dBox + 20} ${hBox/2})">PRZÓD BOKU</text>`; 
+ 
+            function drawStructuralHoles(yAxisSVG) { 
+                let hHtml = ""; let rW = 3; let rK = 5; 
+                hHtml += `<circle cx="${sXBok + dystansTyl}" cy="${yAxisSVG}" r="${rW}" fill="#333"/><circle cx="${sXBok + dystansTyl + 32}" cy="${yAxisSVG}" r="${rK}" fill="#2e7d32"/>`; 
+                hHtml += `<circle cx="${sXBok + dBox - 37}" cy="${yAxisSVG}" r="${rW}" fill="#333"/><circle cx="${sXBok + dBox - 69}" cy="${yAxisSVG}" r="${rK}" fill="#2e7d32"/>`; 
+                if (dBox >= 500) hHtml += `<circle cx="${sXBok + dBox/2 + 16}" cy="${yAxisSVG}" r="${rW}" fill="#333"/><circle cx="${sXBok + dBox/2 - 16}" cy="${yAxisSVG}" r="${rK}" fill="#2e7d32"/>`; 
+                hHtml += `<line x1="${sXBok}" y1="${yAxisSVG}" x2="${sXBok + dBox}" y2="${yAxisSVG}" stroke="#2e7d32" stroke-dasharray="8,4" stroke-width="1.5" opacity="0.6"/>`; 
+                return hHtml; 
+            } 
+ 
+            if (sShelfHoles) { 
+                let topCab = subCabinets[subCabinets.length - 1]; 
+                let topHoleY = hBox - topCab.endY - topCab.visualGap - 40; 
+                svg += `<line x1="${sXBok}" y1="${topHoleY}" x2="${hBackX}" y2="${topHoleY}" stroke="#e53e3e" stroke-width="1.5" marker-start="url(#arrow-red)" marker-end="url(#arrow-red)"/><text x="${sXBok + dystansTyl/2}" y="${topHoleY - 10}" font-size="${fontS}" font-weight="bold" fill="#e53e3e" text-anchor="middle">${dystansTyl}</text>`; 
+                svg += `<line x1="${hFrontX}" y1="${topHoleY}" x2="${sXBok + dBox}" y2="${topHoleY}" stroke="#e53e3e" stroke-width="1.5" marker-start="url(#arrow-red)" marker-end="url(#arrow-red)"/><text x="${sXBok + dBox - 18.5}" y="${topHoleY - 10}" font-size="${fontS}" font-weight="bold" fill="#e53e3e" text-anchor="middle">37</text>`; 
+            } 
+ 
+            if(kTyp === 'wpuszczane') { 
+                if (cokol > 0) svg += `<line x1="${sXBok - 30}" y1="${hBox}" x2="${sXBok - 30}" y2="${hBox - cokol}" stroke="#1F4E79" stroke-width="2" marker-start="url(#arrow)" marker-end="url(#arrow)"/><text x="${sXBok - 40}" y="${hBox - cokol/2 + 8}" font-size="${fontL}" font-weight="bold" fill="#1F4E79" text-anchor="end">Cokół: ${cokol}</text>`; 
+                let svgOsWd = hBox - (cokol + tBoard / 2); svg += `<line x1="${sXBok - 130}" y1="${svgOsWd}" x2="${sXBok}" y2="${svgOsWd}" stroke="#1F4E79" stroke-dasharray="6,6" stroke-width="2"/><text x="${sXBok - 140}" y="${svgOsWd + 8}" font-size="${fontL}" font-weight="bold" fill="#1F4E79" text-anchor="end">Oś wieńca: ${Math.round(cokol + tBoard / 2 - sideBottom)}</text>`; 
+                let topCab = subCabinets[subCabinets.length - 1];
+                let svgOsWg = hBox - topCab.endY - topCab.visualGap + tBoard / 2; svg += `<line x1="${sXBok - 130}" y1="${svgOsWg}" x2="${sXBok}" y2="${svgOsWg}" stroke="#1F4E79" stroke-dasharray="6,6" stroke-width="2"/><text x="${sXBok - 140}" y="${svgOsWg + 8}" font-size="${fontL}" font-weight="bold" fill="#1F4E79" text-anchor="end">Oś wieńca: ${Math.round(topCab.endY - tBoard / 2 - topCab.localZero)}</text>`; 
+                if (sShelfHoles) { svg += drawStructuralHoles(svgOsWd); svg += drawStructuralHoles(svgOsWg); } 
+            } 
+ 
+            osie.forEach((data, i) => { 
+                let ySpodSVG = hBox - data.spod - data.visualGap; let isStruct = data.isStruct; 
+                svg += `<rect x="${sXBok}" y="${ySpodSVG - tBoard}" width="${dBox}" height="${tBoard}" fill="${isStruct ? "#2e7d32" : "#2F5597"}" opacity="${isStruct ? "0.25" : "0.15"}"/>`; 
+                 
+                let yOsPolkiSVG = hBox - (data.spod + tBoard / 2) - data.visualGap; 
+                if (sShelfAxis) { svg += `<line x1="${sXBok - 130}" y1="${yOsPolkiSVG}" x2="${sXBok}" y2="${yOsPolkiSVG}" stroke="#1F4E79" stroke-dasharray="6,6" stroke-width="2"/><text x="${sXBok - 140}" y="${yOsPolkiSVG + 8}" font-size="${fontL}" font-weight="bold" fill="#1F4E79" text-anchor="end">Oś: ${Math.round(data.spod + tBoard / 2 - data.localZero)}</text>`; } 
+                 
+                if (sShelfHoles) { 
+                    if (isStruct) svg += drawStructuralHoles(yOsPolkiSVG); 
+                    else [-32, 0, 32].forEach(offset => { 
+                        let drillY = hBox - (data.os + offset) - data.visualGap; let isCenter = offset === 0; let color = isCenter ? "#e65100" : "#ffb74d"; 
+                        let cab = subCabinets.find(c => c.visualGap === data.visualGap);
+                        let absDist = Math.round(data.os + offset - data.localZero);
+                        let topDist = Math.round(cab.endY - (data.os + offset));
+                        let txtDisplay = `${absDist}`;
+                        if (rcMode) txtDisplay += ` [Rc: ${absDist - 32}]`;
+                        txtDisplay += ` (${topDist})`;
+                        svg += `<circle cx="${hFrontX}" cy="${drillY}" r="${isCenter ? 5 : 4}" fill="${color}"/><circle cx="${hBackX}" cy="${drillY}" r="${isCenter ? 5 : 4}" fill="${color}"/><line x1="${hFrontX}" y1="${drillY}" x2="${laneShelfHoles - 10}" y2="${drillY}" stroke="${color}" stroke-dasharray="4,4" stroke-width="1.5"/><text x="${laneShelfHoles}" y="${drillY + 8}" font-size="${isCenter ? fontL : fontM}" font-weight="${isCenter ? "bold" : "normal"}" fill="${color}" text-anchor="start">${txtDisplay}</text>`; 
+                    }); 
+                } 
+                 
+                if (sDistances && !isStruct) { 
+                    let isFirst = (i === 0 || structuralShelves[i-1]);
+                    let yPrevHoleSVG = isFirst ? (hBox - data.localZero - data.visualGap) : (hBox - osie[i-1].os - osie[i-1].visualGap); 
+                    let yCurrHoleSVG = hBox - data.os - data.visualGap; 
+                    let actualDist = Math.abs(Math.round(yPrevHoleSVG - yCurrHoleSVG));
+                    let freeDimLineX = hFrontX - 35; 
+                     
+                    svg += `<line x1="${freeDimLineX}" y1="${yPrevHoleSVG}" x2="${freeDimLineX}" y2="${yCurrHoleSVG}" stroke="#e65100" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>`; 
+                    
+                    let rcOffset = isFirst ? 32 : 34.5;
+                    let displayTxt = actualDist;
+                    let boxW = 50;
+                    let fSize = fontS;
+                    if (rcMode) {
+                        displayTxt = `${actualDist} (M:${actualDist - rcOffset})`;
+                        boxW = 125;
+                        fSize = fontS - 4;
+                    }
+                    svg += `<rect x="${freeDimLineX - boxW/2}" y="${(yPrevHoleSVG + yCurrHoleSVG)/2 - 14}" width="${boxW}" height="28" fill="#ffffff" stroke="#e65100" stroke-width="1" rx="4"/>`; 
+                    svg += `<text x="${freeDimLineX}" y="${(yPrevHoleSVG + yCurrHoleSVG)/2 + 7}" font-size="${fSize}" font-weight="bold" fill="#e65100" text-anchor="middle">${displayTxt}</text>`; 
+                } 
+            }); 
+            
+            let currentFloorSVG = hBox - sideBottom;
+            for(let i = 0; i < totalSpaces; i++) {
+                let sb = spacesBoundary[i];
+                let isFirst = i === 0 || sb.isSplit;
+                if (isFirst) currentFloorSVG = hBox - sb.localZero - sb.visualGap;
+                
+                let ySpodSVG = hBox - sb.yEnd - sb.visualGap;
+                let shelfColor = structuralShelves[i] ? "#2e7d32" : "#2F5597"; 
+                svg += `<rect x="${innerX}" y="${ySpodSVG - tBoard}" width="${innerW}" height="${tBoard}" fill="${shelfColor}" opacity="0.4" stroke="#1F4E79" stroke-width="2"/>`; 
+                
+                if (sClearance && sb.yEnd > sb.yStart) { 
+                    let isLocked = spaceLocks[i].locked; let strokeColor = isLocked ? "#d32f2f" : "#555"; let arrow = isLocked ? "url(#arrow-red)" : "url(#arrow)"; 
+                    svg += `<line x1="${centerX}" y1="${ySpodSVG}" x2="${centerX}" y2="${currentFloorSVG}" stroke="${strokeColor}" stroke-width="3" marker-start="${arrow}" marker-end="${arrow}"/><rect x="${centerX - 40}" y="${(currentFloorSVG + ySpodSVG)/2 - 20}" width="80" height="40" fill="#fff" opacity="0.9" rx="6"/><text x="${centerX}" y="${(currentFloorSVG + ySpodSVG)/2 + fontM/3}" font-size="${fontM}" font-weight="bold" fill="${strokeColor}" text-anchor="middle">${spaceLocks[i].currentVal}</text>`; 
+                    if(isLocked) svg += `<text x="${centerX + 50}" y="${(currentFloorSVG + ySpodSVG)/2 + fontM/3}" font-size="${fontM}" fill="#d32f2f">🔒</text>`; 
+                } 
+                currentFloorSVG = ySpodSVG - tBoard;  
+            }
+ 
+            drawerGuides.forEach((dg) => { 
+                let yT = hBox - dg.axisYTop - dg.visualGap; 
+                 
+                if (sDrawerTopHoles) { 
+                    svg += `<rect x="${laneHingeAxis}" y="${yT - 20}" width="420" height="38" fill="#f0f4f8" stroke="#1F4E79" stroke-width="1.5" rx="6"/>`; 
+                    
+                    let valAbs = Math.round(dg.axisYTop - dg.localZero);
+                    let txtDisplay = `Oś prowadnicy: ${valAbs}`;
+                    if (rcMode) txtDisplay += ` [M: ${valAbs - 32}]`;
+                    txtDisplay += ` [NL: ${dg.currentNL}]`;
+                    svg += `<text x="${laneHingeAxis + 15}" y="${yT + 7}" font-size="${fontM}" font-weight="bold" fill="#1F4E79" text-anchor="start">${txtDisplay}</text>`; 
+                     
+                    let holesArray = sysDB.yHolesMap[dg.currentNL] || []; 
+                    let firstHoleX = sXBok + dBox - 37; 
+                    svg += `<circle cx="${firstHoleX}" cy="${yT}" r="4.5" fill="#1F4E79" stroke="#1F4E79" stroke-width="1.5"/>`; 
+                     
+                    if (sDrawerYDim) { 
+                        svg += `<line x1="${sXBok + dBox}" y1="${yT - 25}" x2="${firstHoleX}" y2="${yT - 25}" stroke="#e53e3e" stroke-width="1.2" marker-end="url(#arrow-red)" marker-start="url(#arrow-red)"/>`; 
+                        svg += `<text x="${firstHoleX + 18}" y="${yT - 33}" font-size="${fontS}" font-weight="bold" fill="#e53e3e" text-anchor="middle">37</text>`; 
+                    } 
+                    let prevHoleX = firstHoleX; 
+                    holesArray.forEach((step) => { 
+                        let holeX = firstHoleX - step; 
+                        svg += `<circle cx="${holeX}" cy="${yT}" r="4.5" fill="#1F4E79" stroke="#1F4E79" stroke-width="1.5"/>`; 
+                        if (sDrawerYDim) { 
+                            svg += `<line x1="${prevHoleX}" y1="${yT - 25}" x2="${holeX}" y2="${yT - 25}" stroke="#1F4E79" stroke-width="1.2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>`; 
+                            svg += `<text x="${(prevHoleX + holeX)/2}" y="${yT - 33}" font-size="${fontS}" font-weight="bold" fill="#1F4E79" text-anchor="middle">${step}</text>`; 
+                        } 
+                        prevHoleX = holeX; 
+                    }); 
+                } 
+            }); 
+ 
+            if ((sHingeAxis || sHingeHoles) && (isAutoZaw || globalQZaw > 0)) { 
+                doorZawiasy.forEach(zaw => { 
+                    let drillY = hBox - zaw.bodyY - zaw.visualGap; let color = zaw.shifted ? "#9c27b0" : "#0288d1";  
+                    let valAbs = Math.round(zaw.bodyY - zaw.localZero);
+                    let cab = subCabinets.find(c => c.visualGap === zaw.visualGap);
+                    let topAbs = Math.round(cab.endY - zaw.bodyY);
+                    let txtDisplay = `Prowadnik: ${valAbs}`;
+                    if (rcMode) txtDisplay += ` [M: ${valAbs - 32}]`;
+                    txtDisplay += ` (${topAbs})${zaw.shifted ? " [KOREKTA]" : ""}`;
+                    if (sHingeAxis) svg += `<line x1="${hFrontX - 20}" y1="${drillY}" x2="${laneHingeAxis - 10}" y2="${drillY}" stroke="${color}" stroke-dasharray="2,2" stroke-width="2"/><text x="${laneHingeAxis}" y="${drillY + 8}" font-size="${fontL}" font-weight="bold" fill="${color}" text-anchor="start">${txtDisplay}</text>`; 
+                    if (sHingeHoles) [-16, 16].forEach(off => { 
+                        let hy = hBox - (zaw.bodyY + off) - zaw.visualGap; 
+                        svg += `<circle cx="${hFrontX}" cy="${hy}" r="4" fill="${color}"/><line x1="${hFrontX}" y1="${hy}" x2="${laneHingeHoles - 10}" y2="${hy}" stroke="${color}" stroke-dasharray="1,2" stroke-width="1.5"/><text x="${laneHingeHoles}" y="${hy + 8}" font-size="${fontM}" fill="${color}" text-anchor="start">${Math.round(zaw.bodyY + off - zaw.localZero)}</text>`; 
+                    }); 
+                }); 
+            } 
+ 
+            if (sFront) { 
+                svg += `<text x="${sXFront + wBox/2}" y="-80" font-size="36" font-weight="bold" fill="#2e7d32" text-anchor="middle">FRONT (Podział zewnętrzny)</text>`; 
+                
+                subCabinets.forEach((cab, i) => {
+                    let baseF = hBox - cab.startY - cab.visualGap;
+                    
+                    svg += `<line x1="${sXFront - 50}" y1="${baseF}" x2="${sXFront + wBox + 150}" y2="${baseF}" stroke="#2e7d32" stroke-width="3" stroke-dasharray="8,8" opacity="0.6"/><text x="${sXFront + wBox + 160}" y="${baseF + 8}" font-size="${fontL}" font-weight="bold" fill="#2e7d32" text-anchor="start">0 mm (BAZA WNĘTRZA${subCabinets.length > 1 ? ` MODUŁU ${i+1}` : ''})</text>`; 
+                    
+                    let blocksInCab = frontBlocks.filter(fb => fb.visualGap === cab.visualGap && fb.layout !== 'none');
+                    if (blocksInCab.length > 0) {
+                        let minStart = Math.min(...blocksInCab.map(b => b.yStart));
+                        let maxEnd = Math.max(...blocksInCab.map(b => b.yEnd));
+                        let totalFacadeH = maxEnd - minStart;
+                        let topY = hBox - maxEnd - cab.visualGap;
+                        let bottomY = hBox - minStart - cab.visualGap;
+                        
+                        let dimTotalX = sXFront - 110;
+                        svg += `<line x1="${dimTotalX}" y1="${topY}" x2="${dimTotalX}" y2="${bottomY}" stroke="#1b5e20" stroke-width="2" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>`;
+                        svg += `<rect x="${dimTotalX - 35}" y="${topY + totalFacadeH/2 - 16}" width="70" height="32" fill="#ffffff" stroke="#1b5e20" stroke-width="1.5" rx="4"/>`;
+                        svg += `<text x="${dimTotalX}" y="${topY + totalFacadeH/2 + 7}" font-size="${fontM}" font-weight="bold" fill="#1b5e20" text-anchor="middle">${formatDim(totalFacadeH)}</text>`;
+                    }
+                });
+                 
+                frontBlocks.forEach(fb => { 
+                    if (fb.layout === 'none') return; 
+
+                    let rectTopY = hBox - fb.yEnd - fb.visualGap; let rectH = fb.yEnd - fb.yStart; 
+                    
+                    let dimX = sXFront - 45;
+                    svg += `<line x1="${dimX}" y1="${rectTopY}" x2="${dimX}" y2="${rectTopY + rectH}" stroke="#2e7d32" stroke-width="1.5" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>`;
+                    svg += `<rect x="${dimX - 30}" y="${rectTopY + rectH/2 - 14}" width="60" height="28" fill="#ffffff" stroke="#2e7d32" stroke-width="1" rx="4"/>`;
+                    svg += `<text x="${dimX}" y="${rectTopY + rectH/2 + 6}" font-size="${fontS}" font-weight="bold" fill="#2e7d32" text-anchor="middle">${formatDim(rectH)}</text>`;
+
+                    let fFullW = (wBox - 2*tBoard) + fb.nL + fb.nR;
+                    let leftX = sXFront + tBoard - fb.nL;
+                    let halfW = (fFullW - fb.gap) / 2;
+
+                    let rects = [];
+                    if (fb.layout === 'full') rects.push({ x: leftX, w: fFullW, hinge: 'left' });
+                    else if (fb.layout === 'left') rects.push({ x: leftX, w: halfW, hinge: 'left' });
+                    else if (fb.layout === 'right') rects.push({ x: leftX + halfW + fb.gap, w: halfW, hinge: 'right' });
+                    else if (fb.layout === 'double') {
+                        rects.push({ x: leftX, w: halfW, hinge: 'left' });
+                        rects.push({ x: leftX + halfW + fb.gap, w: halfW, hinge: 'right' });
+                    }
+
+                    if(fb.type === 'door') { 
+                        rects.forEach(r => {
+                            svg += `<rect x="${r.x}" y="${rectTopY}" width="${r.w}" height="${rectH}" fill="#e2efda" stroke="#2e7d32" stroke-width="${lineW}"/>`;
+                            let zawInfo = fb.actualZawCount > 0 ? ` (${fb.actualZawCount} zaw.)` : ``;
+                            svg += `<text x="${r.x + r.w/2}" y="${rectTopY + rectH/2 + 8}" font-size="${fontM}" font-weight="bold" fill="#2e7d32" text-anchor="middle">Front: ${formatDim(rectH)} mm${zawInfo}</text>`;
+                        });
+
+                        fb.hinges.forEach(zaw => { 
+                            let cy = hBox - zaw.bodyY - zaw.visualGap; let color = zaw.shifted ? "#9c27b0" : "#2e7d32"; 
+                            
+                            if (fb.layout === 'full' || fb.layout === 'left' || fb.layout === 'double') {
+                                let puszkaX = leftX + 22;  
+                                svg += `<circle cx="${puszkaX}" cy="${cy}" r="17.5" fill="none" stroke="${color}" stroke-width="3"/><circle cx="${puszkaX}" cy="${cy}" r="3" fill="${color}"/>`;
+                                svg += `<line x1="${puszkaX}" y1="${cy}" x2="${sXFront + wBox + 60}" y2="${cy}" stroke="${color}" stroke-dasharray="4,4" stroke-width="2"/>`;
+                                if (fb.layout !== 'double') {
+                                    svg += `<text x="${sXFront + wBox + 70}" y="${cy + 8}" font-size="${fontL}" font-weight="bold" fill="${color}" text-anchor="start">${formatDim(zaw.frontY)} (${formatDim(rectH - zaw.frontY)})${zaw.shifted ? " [KOREKTA]" : ""}</text>`; 
+                                }
+                            }
+                            if (fb.layout === 'right' || fb.layout === 'double') {
+                                let puszkaX = leftX + fFullW - 22;
+                                svg += `<circle cx="${puszkaX}" cy="${cy}" r="17.5" fill="none" stroke="${color}" stroke-width="3"/><circle cx="${puszkaX}" cy="${cy}" r="3" fill="${color}"/>`;
+                                svg += `<line x1="${puszkaX}" y1="${cy}" x2="${sXFront + wBox + 60}" y2="${cy}" stroke="${color}" stroke-dasharray="4,4" stroke-width="2"/>`;
+                                svg += `<text x="${sXFront + wBox + 70}" y="${cy + 8}" font-size="${fontL}" font-weight="bold" fill="${color}" text-anchor="start">${formatDim(zaw.frontY)} (${formatDim(rectH - zaw.frontY)})${zaw.shifted ? " [KOREKTA]" : ""}</text>`;
+                            }
+                        }); 
+                    } else if(fb.type === 'drawers') { 
+                        fb.drawers.forEach((dr, idx) => { 
+                            let drH = dr.yEnd - dr.yStart; 
+                            
+                            rects.forEach(r => {
+                                svg += `<rect x="${r.x}" y="${hBox - dr.yEnd - fb.visualGap}" width="${r.w}" height="${drH}" fill="#e8f0fe" stroke="#1F4E79" stroke-width="${lineW}"/>`; 
+                                let drTypeLabel = ""; 
+                                if (fb.drawerMode === 'manual' && fb.manualFronts[idx]) { 
+                                    let tObj = sysDB.types.find(t => t.id === fb.manualFronts[idx].type); 
+                                    if(tObj) drTypeLabel = ` [Typ: ${tObj.label}]`; 
+                                } 
+                                svg += `<text x="${r.x + r.w/2}" y="${hBox - dr.yEnd - fb.visualGap + drH/2 + 8}" font-size="${fontS}" font-weight="bold" fill="#1F4E79" text-anchor="middle">Szuf. ${idx+1} (F: ${formatDim(drH)}mm)${drTypeLabel}</text>`; 
+                            });
+                        }); 
+                    } 
+                }); 
+            }
+
+            svg += `</svg>`; 
+            document.getElementById('svgWrapper').innerHTML = svg; 
+
+            // ODŚWIEŻENIE WIDOKU 3D
+            update3DScene();
+        } 
+ 
+        window.onload = () => { 
+            initZoomPan(); 
+            run(); 
+            renderSavedCabinets(); 
+            toggleAutoZaw(); 
+            toggleBackFields(); 
+        }; 
+    </script> 
+</body> 
 </html>
