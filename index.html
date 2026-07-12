@@ -421,95 +421,86 @@
         function update3DScene() {
             if(!is3DInitialized || !cabinetGroup) return;
 
-            // Wyczyszczenie starego modelu
-            while(cabinetGroup.children.length > 0){ 
-                cabinetGroup.remove(cabinetGroup.children[0]); 
-            }
+            while(cabinetGroup.children.length > 0) cabinetGroup.remove(cabinetGroup.children[0]); 
 
-            // Pobranie aktualnych wymiarów z inputów 2D
-            let wBox = val('wBox'); 
-            let hBox = val('hBox'); 
-            let dBox = val('dBox'); 
-            let tBoard = val('tBoard');
-            let cokol = val('cokol');
-            let kTyp = document.getElementById('kTyp').value;
-            let backType = document.getElementById('backType').value;
-            let grPlecy = val('grPlecy');
-            let nutDepth = val('nutDepth');
+            let wBox = val('wBox'); let hBox = val('hBox'); let dBox = val('dBox'); let tBoard = val('tBoard');
+            let cokol = val('cokol'); let kTyp = document.getElementById('kTyp').value;
+            let backType = document.getElementById('backType').value; let grPlecy = val('grPlecy');
+            
+            let nutPosition = val('nutPosition'); 
+            let nutGroove = val('nutGroove');
+            let nutBottom = isChecked('nutBottomCheck');
+            let nutTop = isChecked('nutTopCheck');
+            const LUZ_NUT = 2;
 
-            // Materiały
             const matKorpus = new THREE.MeshLambertMaterial({ color: 0x90caf9, transparent: true, opacity: 0.6 });
             const matFront = new THREE.MeshLambertMaterial({ color: 0xa8e6cf, transparent: true, opacity: 0.85 });
             const matPolka = new THREE.MeshLambertMaterial({ color: 0xffd3b6, transparent: true, opacity: 0.75 });
             const matHDF = new THREE.MeshLambertMaterial({ color: 0xffcc80, transparent: true, opacity: 0.5 });
             const edgeMat = new THREE.LineBasicMaterial({ color: 0x153a5b, linewidth: 1 });
 
-            // Funkcja pomocnicza do tworzenia elementu
             function addPart(w, h, d, x, y, z, mat) {
                 const geom = new THREE.BoxGeometry(w, Math.max(h, 0.1), Math.max(d, 0.1));
                 const mesh = new THREE.Mesh(geom, mat);
                 const edges = new THREE.EdgesGeometry(geom);
-                const line = new THREE.LineSegments(edges, edgeMat);
-                mesh.add(line);
+                mesh.add(new THREE.LineSegments(edges, edgeMat));
                 mesh.position.set(x, y, z);
                 cabinetGroup.add(mesh);
             }
 
-            // --- BAZOWE WYMIARY BRYŁY ---
-            // W 3D ustawmy X=0 jako środek szerokości szafki, Y=0 jako podłogę, Z=0 jako tył korpusu (plecy)
             let sideBot = (kTyp === 'nakladane') ? cokol + tBoard : 0;
             let sideTop = (kTyp === 'nakladane') ? hBox - tBoard : hBox;
             let sideH = sideTop - sideBot;
 
-            // 1. Boki
-            addPart(tBoard, sideH, dBox, -wBox/2 + tBoard/2, sideBot + sideH/2, dBox/2, matKorpus); // Bok Lewy
-            addPart(tBoard, sideH, dBox, wBox/2 - tBoard/2, sideBot + sideH/2, dBox/2, matKorpus); // Bok Prawy
+            // Boki
+            addPart(tBoard, sideH, dBox, -wBox/2 + tBoard/2, sideBot + sideH/2, dBox/2, matKorpus); 
+            addPart(tBoard, sideH, dBox, wBox/2 - tBoard/2, sideBot + sideH/2, dBox/2, matKorpus);
 
-            // 2. Wieńce (Dół i Góra)
+            // Wieńce - z uwzględnieniem skracania
             let wWieniec = (kTyp === 'nakladane') ? wBox : wBox - 2*tBoard;
-            addPart(wWieniec, tBoard, dBox, 0, cokol + tBoard/2, dBox/2, matKorpus); // Dno
-            addPart(wWieniec, tBoard, dBox, 0, hBox - tBoard/2, dBox/2, matKorpus); // Góra
-
-            // 3. Cokół (Front i opcjonalnie Tył)
-            if(cokol > 0) {
-                addPart(wBox, cokol, tBoard, 0, cokol/2, dBox - tBoard/2, matKorpus); // Cokół przedni
-            }
-
-            // 4. Plecy (HDF) z uwzględnieniem fizycznych wcięć i luzów
-            const WCIECIE_NUT = 13; // Plecy wchodzą 13mm w płytę boczną
-            const LUZ_NUT = 2;      // 2mm luzu
             
-            let backW = wBox;
-            let backH = hBox;
-            let backZ = -grPlecy/2;
-            let backY = sideBot + sideH/2;
+            let dDno = (backType === 'nut' && !nutBottom) ? (dBox - nutPosition - grPlecy) : dBox;
+            let zDno = dBox - dDno/2; // Zrównane do frontu
+            addPart(wWieniec, tBoard, dDno, 0, cokol + tBoard/2, zDno, matKorpus); 
+            
+            let dGora = (backType === 'nut' && !nutTop) ? (dBox - nutPosition - grPlecy) : dBox;
+            let zGora = dBox - dGora/2;
+            addPart(wWieniec, tBoard, dGora, 0, hBox - tBoard/2, zGora, matKorpus); 
+
+            if(cokol > 0) addPart(wBox, cokol, tBoard, 0, cokol/2, dBox - tBoard/2, matKorpus);
+
+            // Plecy (HDF)
+            let backW = wBox; let backH = hBox; let backZ = -grPlecy/2; let backY = sideBot + sideH/2;
 
             if (backType === 'nut') {
-                backW = wBox - 2*tBoard + 2*WCIECIE_NUT - 2*LUZ_NUT;
-                backH = hBox - 2*tBoard + 2*WCIECIE_NUT - 2*LUZ_NUT; 
-                backZ = nutDepth + grPlecy/2; // Odsunięcie od tyłu boku zostaje z UI (domyślnie 20mm)
-                backY = hBox/2; 
+                backW = wBox - 2*tBoard + 2*nutGroove - 2*LUZ_NUT;
+                backH = sideH - 2*tBoard; // Światło
+                backY = sideBot + tBoard + backH/2; 
+
+                if (nutBottom) { backH += (nutGroove - LUZ_NUT); backY -= (nutGroove - LUZ_NUT)/2; }
+                if (nutTop) { backH += (nutGroove - LUZ_NUT); backY += (nutGroove - LUZ_NUT)/2; }
+                backZ = nutPosition + grPlecy/2; 
             } else {
-                backH = sideH;
-                backY = sideBot + sideH/2;
+                backH = sideH; backY = sideBot + sideH/2;
             }
             addPart(backW, backH, grPlecy, 0, backY, backZ, matHDF);
-            // 5. Półki (z tablicy wygenerowanej w 2D)
+
+            // Półki (Spłycone)
             if (window.lastOsie && window.lastOsie.length > 0) {
                 window.lastOsie.forEach(osData => {
-                    // osData.spod jest odległością od DOŁU KORPUSU (Y=0)
                     let yCenter = osData.spod + tBoard/2; 
-                    let pDepth = dBox - 15; // Zwykle półki są nieco cofnięte
-                    let pZCenter = (dBox - pDepth)/2 + pDepth/2;
+                    let shelfBackZ = (backType === 'nut') ? (nutPosition + grPlecy + 1) : 0; 
+                    let shelfFrontZ = dBox - 5; 
+                    let pDepth = Math.max(shelfFrontZ - shelfBackZ, 10); 
+                    let pZCenter = shelfBackZ + pDepth/2;
                     addPart(wBox - 2*tBoard, tBoard, pDepth, 0, yCenter, pZCenter, matPolka);
                 });
             }
 
-            // 6. Fronty / Szuflady (z tablicy frontBlocks w 2D)
+            // Fronty
             if (window.lastFrontBlocks && window.lastFrontBlocks.length > 0) {
                 window.lastFrontBlocks.forEach(fb => {
                     if (fb.layout === 'none') return;
-                    
                     let fW_full = (wBox - 2*tBoard) + fb.nL + fb.nR;
                     let leftX = -wBox/2 + tBoard - fb.nL;
 
@@ -518,24 +509,16 @@
                         if(layout === 'left' || layout === 'right' || layout === 'double') wFront = (fW_full - fb.gap)/2;
                         if(layout === 'left') cx = leftX + wFront/2;
                         if(layout === 'right') cx = leftX + wFront + fb.gap + wFront/2;
-                        
-                        let frontZ = dBox + FRONT_THICKNESS/2;
+                        let frontZ = dBox + 18/2; 
 
                         if(layout === 'double') {
-                            addPart(wFront, fH, FRONT_THICKNESS, leftX + wFront/2, fYStart + fH/2, frontZ, matFront); // L
-                            addPart(wFront, fH, FRONT_THICKNESS, leftX + wFront + fb.gap + wFront/2, fYStart + fH/2, frontZ, matFront); // R
-                        } else {
-                            addPart(wFront, fH, FRONT_THICKNESS, cx, fYStart + fH/2, frontZ, matFront);
-                        }
+                            addPart(wFront, fH, 18, leftX + wFront/2, fYStart + fH/2, frontZ, matFront); 
+                            addPart(wFront, fH, 18, leftX + wFront + fb.gap + wFront/2, fYStart + fH/2, frontZ, matFront); 
+                        } else addPart(wFront, fH, 18, cx, fYStart + fH/2, frontZ, matFront);
                     };
 
-                    if(fb.type === 'door') {
-                        drawFrontRect(fb.yEnd - fb.yStart, fb.yStart, fb.layout);
-                    } else if(fb.type === 'drawers' && fb.drawers) {
-                        fb.drawers.forEach(dr => {
-                            drawFrontRect(dr.yEnd - dr.yStart, dr.yStart, fb.layout);
-                        });
-                    }
+                    if(fb.type === 'door') drawFrontRect(fb.yEnd - fb.yStart, fb.yStart, fb.layout);
+                    else if(fb.type === 'drawers' && fb.drawers) fb.drawers.forEach(dr => drawFrontRect(dr.yEnd - dr.yStart, dr.yStart, fb.layout));
                 });
             }
         }
@@ -639,8 +622,10 @@
                 qZaw: val('qZaw'), autoZaw: document.getElementById('autoZaw').checked, zOffD: val('zOffD'), zOffG: val('zOffG'), 
                 nTop: val('nTop'), nBottom: val('nBottom'), nLeft: val('nLeft'), nRight: val('nRight'), nWewnetrzne: val('nWewnetrzne'), cMargin: val('cMargin'), 
                 drawerSystem: document.getElementById('drawerSystem').value, 
-                customDrawerAxis: val('customDrawerAxis'), backType: document.getElementById('backType').value, 
-                grPlecy: val('grPlecy'), nutDepth: val('nutDepth'), 
+                customDrawerAxis: val('customDrawerAxis'), 
+                backType: document.getElementById('backType').value, grPlecy: val('grPlecy'),
+                nutPosition: val('nutPosition'), nutGroove: val('nutGroove'),
+                nutBottomCheck: isChecked('nutBottomCheck'), nutTopCheck: isChecked('nutTopCheck'),
                 spaceLocks: JSON.parse(JSON.stringify(spaceLocks)), 
                 structuralShelves: JSON.parse(JSON.stringify(structuralShelves)) 
             }; 
@@ -658,8 +643,10 @@
                 qZaw: val('qZaw'), autoZaw: document.getElementById('autoZaw').checked, zOffD: val('zOffD'), zOffG: val('zOffG'), 
                 nTop: val('nTop'), nBottom: val('nBottom'), nLeft: val('nLeft'), nRight: val('nRight'), nWewnetrzne: val('nWewnetrzne'), cMargin: val('cMargin'), 
                 drawerSystem: document.getElementById('drawerSystem').value, 
-                customDrawerAxis: val('customDrawerAxis'), backType: document.getElementById('backType').value, 
-                grPlecy: val('grPlecy'), nutDepth: val('nutDepth'), 
+                customDrawerAxis: val('customDrawerAxis'), 
+                backType: document.getElementById('backType').value, grPlecy: val('grPlecy'), 
+                nutPosition: val('nutPosition'), nutGroove: val('nutGroove'),
+                nutBottomCheck: isChecked('nutBottomCheck'), nutTopCheck: isChecked('nutTopCheck'),
                 spaceLocks: JSON.parse(JSON.stringify(spaceLocks)), 
                 structuralShelves: JSON.parse(JSON.stringify(structuralShelves)) 
             }; 
@@ -686,7 +673,11 @@
             
             document.getElementById('backType').value = cab.backType !== undefined ? cab.backType : 'nakladane'; 
             document.getElementById('grPlecy').value = cab.grPlecy !== undefined ? cab.grPlecy : 3;
-            document.getElementById('nutDepth').value = cab.nutDepth !== undefined ? cab.nutDepth : 12; 
+            // Backward compatibility for old nutDepth
+            document.getElementById('nutPosition').value = cab.nutPosition !== undefined ? cab.nutPosition : (cab.nutDepth !== undefined ? cab.nutDepth : 20); 
+            document.getElementById('nutGroove').value = cab.nutGroove !== undefined ? cab.nutGroove : 13; 
+            document.getElementById('nutBottomCheck').checked = cab.nutBottomCheck || false;
+            document.getElementById('nutTopCheck').checked = cab.nutTopCheck || false;
              
             toggleBackFields(); 
             let loadedSys = cab.drawerSystem !== undefined ? cab.drawerSystem : "44"; 
@@ -872,7 +863,7 @@
             let hBox = val('hBox'); let wBox = val('wBox'); let dBox = val('dBox'); let tBoard = val('tBoard'); 
             let qPol = val('qPol'); let offsetPodporki = val('offsetPodporki'); let cokol = val('cokol'); 
             let backType = document.getElementById('backType').value; 
-            let nutDepth = val('nutDepth'); let grPlecy = val('grPlecy');
+            let nutPosition = val('nutPosition'); let grPlecy = val('grPlecy');
             let luzBocznyPolki = val('luzBocznyPolki');
 
             let totalSpaces = qPol + 1;
@@ -928,14 +919,16 @@
                     parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Cokół (Front/Tył)", l: formatDim(wBox), w: formatDim(cokol), szt: 2 });
                 }
 
-                const WCIECIE_NUT = 13; // Głębokość frezowania (wpustu) w płycie bocznej
+                const WCIECIE_NUT = val('nutGroove');
                 const LUZ_NUT = 2;      // Luz technologiczny na każdą stronę
 
                 let backW = 0; let backH = 0;
                 if (backType === 'nut') {
                     // Szerokość: Światło (wBox - 2*tBoard) + wcięcia (2*13) - luzy (2*2)
                     backW = wBox - 2*tBoard + 2*WCIECIE_NUT - 2*LUZ_NUT; 
-                    backH = cabH - 2*tBoard + 2*WCIECIE_NUT - 2*LUZ_NUT; 
+                    backH = cabH - 2*tBoard - 2*LUZ_NUT;
+                    if (i === 0 && isChecked('nutBottomCheck')) backH += WCIECIE_NUT;
+                    if (i === subCabinetsLocal.length - 1 && isChecked('nutTopCheck')) backH += WCIECIE_NUT;
                 } else {
                     backW = wBox - 2;
                     backH = cabH - 2;
@@ -947,7 +940,7 @@
 
             if (polkiRuchome.length > 0) {
                 // Półka ruchoma spłycona o dystans nutu od tyłu (nutDepth), grubość HDF i dodatkowe 5mm luzu
-                let pDepthRozkroj = (backType === 'nut') ? (dBox - nutDepth - grPlecy - 5) : (dBox - 15);
+                let pDepthRozkroj = (backType === 'nut') ? (dBox - nutPosition - grPlecy - 5) : (dBox - 15);
                 parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Półka ruchoma", l: formatDim(wBox - 2*tBoard - luzBocznyPolki), w: formatDim(pDepthRozkroj), szt: polkiRuchome.length });
             }
 
@@ -992,7 +985,7 @@
                 <tbody>`;
 
             parts.sort((a,b) => b.gr - a.gr);
-
+    
             let currentGr = 0;
             parts.forEach(p => {
                 if (p.gr !== currentGr) {
@@ -1010,7 +1003,7 @@
                 `;
             });
             tableHtml += `</tbody></table>`;
-
+    
             document.getElementById('cutListContainer').innerHTML = tableHtml;
             document.getElementById('cutListModal').style.display = 'flex';
         }
@@ -1023,7 +1016,7 @@
             let hBox = val('hBox'); let wBox = val('wBox'); let dBox = val('dBox'); let tBoard = val('tBoard'); 
             let qPol = val('qPol'); let offsetPodporki = val('offsetPodporki'); let cokol = val('cokol'); 
             let backType = document.getElementById('backType').value; 
-            let nutDepth = val('nutDepth'); let grPlecy = val('grPlecy');
+            let nutPosition = val('nutPosition'); let grPlecy = val('grPlecy');
             let rcMode = isChecked('rcMode');
  
             let sClearance = isChecked('sClearance'); let sShelfAxis = isChecked('sShelfAxis'); 
@@ -1045,7 +1038,7 @@
             let isAutoZaw = isChecked('autoZaw'); 
             let sysDB = DRAWER_DB[document.getElementById('drawerSystem').value]; 
  
-            let currentLInternal = (backType === 'nut') ? (dBox - 18 - nutDepth) : (dBox - 18); 
+            let currentLInternal = (backType === 'nut') ? (dBox - nutPosition - grPlecy) : (dBox - 18); 
             hideError(); 
  
             let totalSpaces = qPol + 1; 
