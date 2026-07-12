@@ -475,19 +475,25 @@
                 addPart(wBox, cokol, tBoard, 0, cokol/2, dBox - tBoard/2, matKorpus); // Cokół przedni
             }
 
-            // 4. Plecy (HDF)
-            let backW = (backType === 'nut') ? (wBox - 2*tBoard + 2*nutDepth) : wBox;
-            let backH = (backType === 'nut') ? (hBox - 2*tBoard + 2*nutDepth) : hBox;
-            let backZ = (backType === 'nut') ? nutDepth + grPlecy/2 : -grPlecy/2;
-            let backY = (backType === 'nut') ? cokol + tBoard + (hBox - cokol - 2*tBoard)/2 : hBox/2;
+            // 4. Plecy (HDF) z uwzględnieniem fizycznych wcięć i luzów
+            const WCIECIE_NUT = 13; // Plecy wchodzą 13mm w płytę boczną
+            const LUZ_NUT = 2;      // 2mm luzu
             
-            if (backType === 'nakladane') {
+            let backW = wBox;
+            let backH = hBox;
+            let backZ = -grPlecy/2;
+            let backY = sideBot + sideH/2;
+
+            if (backType === 'nut') {
+                backW = wBox - 2*tBoard + 2*WCIECIE_NUT - 2*LUZ_NUT;
+                backH = hBox - 2*tBoard + 2*WCIECIE_NUT - 2*LUZ_NUT; 
+                backZ = nutDepth + grPlecy/2; // Odsunięcie od tyłu boku zostaje z UI (domyślnie 20mm)
+                backY = hBox/2; 
+            } else {
                 backH = sideH;
                 backY = sideBot + sideH/2;
             }
-            
             addPart(backW, backH, grPlecy, 0, backY, backZ, matHDF);
-
             // 5. Półki (z tablicy wygenerowanej w 2D)
             if (window.lastOsie && window.lastOsie.length > 0) {
                 window.lastOsie.forEach(osData => {
@@ -922,10 +928,14 @@
                     parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Cokół (Front/Tył)", l: formatDim(wBox), w: formatDim(cokol), szt: 2 });
                 }
 
+                const WCIECIE_NUT = 13; // Głębokość frezowania (wpustu) w płycie bocznej
+                const LUZ_NUT = 2;      // Luz technologiczny na każdą stronę
+
                 let backW = 0; let backH = 0;
                 if (backType === 'nut') {
-                    backW = wBox - 2*tBoard + 2*nutDepth - 2; 
-                    backH = cabH - 2*tBoard + 2*nutDepth - 2; 
+                    // Szerokość: Światło (wBox - 2*tBoard) + wcięcia (2*13) - luzy (2*2)
+                    backW = wBox - 2*tBoard + 2*WCIECIE_NUT - 2*LUZ_NUT; 
+                    backH = cabH - 2*tBoard + 2*WCIECIE_NUT - 2*LUZ_NUT; 
                 } else {
                     backW = wBox - 2;
                     backH = cabH - 2;
@@ -936,7 +946,9 @@
             });
 
             if (polkiRuchome.length > 0) {
-                parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Półka ruchoma", l: formatDim(wBox - 2*tBoard - luzBocznyPolki), w: formatDim(dBox - offsetPodporki), szt: polkiRuchome.length });
+                // Półka ruchoma spłycona o dystans nutu od tyłu (nutDepth), grubość HDF i dodatkowe 5mm luzu
+                let pDepthRozkroj = (backType === 'nut') ? (dBox - nutDepth - grPlecy - 5) : (dBox - 15);
+                parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Półka ruchoma", l: formatDim(wBox - 2*tBoard - luzBocznyPolki), w: formatDim(pDepthRozkroj), szt: polkiRuchome.length });
             }
 
             if (window.lastFrontBlocks) {
