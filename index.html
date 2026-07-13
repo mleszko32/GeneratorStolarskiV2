@@ -520,7 +520,7 @@
                 
                 backH = bTop - bBottom;
                 backY = bBottom + backH/2;
-                backZ = nutDepthVal + grPlecy/2; 
+                backZ = nutDepthVal - grPlecy/2; 
             } else {
                 backH = sideH; backY = sideBot + sideH/2;
             }
@@ -1128,7 +1128,7 @@
             let isAutoZaw = isChecked('autoZaw'); 
             let sysDB = DRAWER_DB[document.getElementById('drawerSystem').value]; 
  
-            let currentLInternal = (backType === 'nut') ? (dBox - nutDepthVal - grPlecy) : (dBox - 18); 
+            let currentLInternal = (backType === 'nut') ? (dBox - nutDepthVal) : (dBox - 18); 
             hideError(); 
  
             let totalSpaces = qPol + 1; 
@@ -1568,7 +1568,7 @@
             let dystansTyl = (backType === 'nut') ? (currentNutDepth + 37) : 37;            
             let hBackX = sXBok + dystansTyl; 
             let hFrontX = sXBok + dBox - 37; 
-            let plecyX_Bok = (backType === 'nut') ? (sXBok + currentNutDepth) : (sXBok - grPlecy);
+            let plecyX_Bok = (backType === 'nut') ? (sXBok + currentNutDepth - grPlecy) : (sXBok - grPlecy);
             let grFrontuWizualna = 18;
             let frontX_Bok = sXBok + dBox;
             let laneHingeHoles = sXBok + dBox + 40;  
