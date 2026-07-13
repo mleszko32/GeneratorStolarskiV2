@@ -320,44 +320,38 @@
 
         const DRAWER_DB = { 
             "44": { 
-                name: "GTV Axis Pro / Modern Box", 
-                lengths: [250, 300, 350, 400, 450, 500, 550, 600], 
-                ltRequired: 5, 
+                name: "GTV Axis Pro / Modern Box", lengths: [250, 300, 350, 400, 450, 500, 550, 600], ltRequired: 5, 
                 yHolesMap: { 250: [96], 300: [128], 350: [128], 400: [192], 450: [192], 500: [224], 550: [224], 600: [224, 352] }, 
-                types: [ { id: "A", label: "A (Niska)", minFront: 105 }, { id: "B", label: "B (Średnia)", minFront: 160 }, { id: "C", label: "C (Wysoka)", minFront: 192 }, { id: "D", label: "D (B. Wysoka)", minFront: 224 } ], 
-                default: "C" 
+                types: [ { id: "A", label: "A (Niska)", minFront: 105, boxH: 84 }, { id: "B", label: "B (Średnia)", minFront: 160, boxH: 116 }, { id: "C", label: "C (Wysoka)", minFront: 192, boxH: 167 }, { id: "D", label: "D (B. Wysoka)", minFront: 224, boxH: 199 } ], 
+                default: "C",
+                cutConfig: { boardThick: 16, bottomW: (LW) => LW - 87, bottomL: (NL) => NL - 24, backW: (LW) => LW - 87 }
             }, 
             "44_18": { 
-                name: "GTV Axis Pro (Dno 18mm)", 
-                lengths: [250, 300, 350, 400, 450, 500, 550, 600], 
-                ltRequired: 5, 
+                name: "GTV Axis Pro (Dno 18mm)", lengths: [250, 300, 350, 400, 450, 500, 550, 600], ltRequired: 5, 
                 yHolesMap: { 250: [96], 300: [128], 350: [128], 400: [192], 450: [192], 500: [224], 550: [224], 600: [224, 352] }, 
-                types: [ { id: "A", label: "A (H=86)", minFront: 115 }, { id: "B", label: "B (H=120)", minFront: 147 }, { id: "C", label: "C (H=168)", minFront: 198 }, { id: "D", label: "D (H=200)", minFront: 230 } ], 
-                default: "C" 
+                types: [ { id: "A", label: "A (H=86)", minFront: 115, boxH: 84 }, { id: "B", label: "B (H=120)", minFront: 147, boxH: 116 }, { id: "C", label: "C (H=168)", minFront: 198, boxH: 167 }, { id: "D", label: "D (H=200)", minFront: 230, boxH: 199 } ], 
+                default: "C",
+                cutConfig: { boardThick: 18, bottomW: (LW) => LW - 87, bottomL: (NL) => NL - 24, backW: (LW) => LW - 87 }
             },
             "54": { 
-                name: "Blum Merivobox", 
-                lengths: [270, 300, 350, 400, 450, 500, 550, 600], 
-                ltRequired: 3, 
+                name: "Blum Merivobox", lengths: [270, 300, 350, 400, 450, 500, 550, 600], ltRequired: 3, 
                 yHolesMap: { 270: [96], 300: [128], 350: [128], 400: [192], 450: [192, 256], 500: [224, 288], 550: [224, 352], 600: [224, 384] }, 
-                types: [ { id: "N", label: "N (B. Niska)", minFront: 85.5 }, { id: "M", label: "M (Niska)", minFront: 108 }, { id: "K", label: "K (Średnia)", minFront: 146 }, { id: "E", label: "E (Wysoka)", minFront: 209 } ], 
-                default: "K" 
+                types: [ { id: "N", label: "N (B. Niska)", minFront: 85.5, boxH: 69 }, { id: "M", label: "M (Niska)", minFront: 108, boxH: 91 }, { id: "K", label: "K (Średnia)", minFront: 146, boxH: 130 }, { id: "E", label: "E (Wysoka)", minFront: 209, boxH: 193 } ], 
+                default: "K",
+                cutConfig: { boardThick: 16, bottomW: (LW) => LW - 51, bottomL: (NL) => NL - 26, backW: (LW) => LW - 74 }
             }, 
             "33": { 
-                name: "Blum Antaro / Tandembox", 
-                lengths: [270, 300, 350, 400, 450, 500, 550, 600, 650], 
-                ltRequired: 3, 
+                name: "Blum Antaro / Tandembox", lengths: [270, 300, 350, 400, 450, 500, 550, 600, 650], ltRequired: 3, 
                 yHolesMap: { 270: [96], 300: [128], 350: [128], 400: [192], 450: [192, 288], 500: [224, 288], 550: [224, 384], 600: [224, 384], 650: [224, 384, 480] }, 
-                types: [ { id: "N", label: "N (B. Niska)", minFront: 82.5 }, { id: "M", label: "M (Niska)", minFront: 98.5 }, { id: "K", label: "K (Średnia)", minFront: 130.5 }, { id: "C", label: "C (Wysoka)", minFront: 192 }, { id: "D", label: "D (B. Wysoka)", minFront: 224 } ], 
-                default: "D" 
+                types: [ { id: "N", label: "N (B. Niska)", minFront: 82.5, boxH: 69 }, { id: "M", label: "M (Niska)", minFront: 98.5, boxH: 84 }, { id: "K", label: "K (Średnia)", minFront: 130.5, boxH: 116 }, { id: "C", label: "C (Wysoka)", minFront: 192, boxH: 167 }, { id: "D", label: "D (B. Wysoka)", minFront: 224, boxH: 199 } ], 
+                default: "D",
+                cutConfig: { boardThick: 16, bottomW: (LW) => LW - 75, bottomL: (NL) => NL - 24, backW: (LW) => LW - 87 }
             }, 
             "custom": { 
-                name: "Inne (Własne)", 
-                lengths: [250, 300, 350, 400, 450, 500, 550, 600], 
-                ltRequired: 3, 
+                name: "Inne (Własne)", lengths: [250, 300, 350, 400, 450, 500, 550, 600], ltRequired: 3, 
                 yHolesMap: { 250: [96], 300: [128], 350: [128], 400: [192], 450: [192], 500: [224], 550: [224], 600: [224] }, 
-                types: [ { id: "UNI", label: "Uniwersalna", minFront: 60 } ], 
-                default: "UNI" 
+                types: [ { id: "UNI", label: "Uniwersalna", minFront: 60, boxH: 100 } ], default: "UNI",
+                cutConfig: { boardThick: 16, bottomW: (LW) => LW - 75, bottomL: (NL) => NL - 24, backW: (LW) => LW - 75 }
             } 
         }; 
  
@@ -570,7 +564,9 @@
 
                             if (fb.layout !== 'none') {
                                 let nl = dr.currentNL || 400; 
-                                let boxH = Math.max(drH - 40, 50); 
+                                let sysDB = DRAWER_DB[document.getElementById('drawerSystem').value];
+                                let typeObj = sysDB.types.find(t => t.id === dr.type);
+                                let boxH = typeObj ? typeObj.boxH : Math.max(drH - 40, 50); 
                                 let boxW = wBox - 2*tBoard - 26; 
                                 let boxZ = dBox - nl/2; 
                                 let boxY = dr.yStart + boxH/2 + 15; 
@@ -965,7 +961,7 @@
                     if (i === subCabinetsLocal.length - 1) sideH -= tBoard; 
                 }
 
-                parts.push({ gr: tBoard, mat: "Płyta", nazwa: `Bok (Moduł ${i+1})`, l: formatDim(sideH), w: formatDim(dBox), szt: 2 });
+                parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Bok", l: formatDim(sideH), w: formatDim(dBox), szt: 2 });
 
                 const WCIECIE_NUT = val('nutGroove');
                 const LUZ_NUT = 2; 
@@ -996,7 +992,7 @@
                     backH = cabH - 2;
                 }
                 if (backH > 0) {
-                    parts.push({ gr: grPlecy, mat: "HDF", nazwa: `Plecy (Moduł ${i+1})`, l: formatDim(backH), w: formatDim(backW), szt: 1 });
+                    parts.push({ gr: grPlecy, mat: "HDF", nazwa: "Plecy", l: formatDim(backH), w: formatDim(backW), szt: 1 });
                 }
             });
 
@@ -1043,9 +1039,26 @@
                         let rectH = fb.yEnd - fb.yStart;
                         parts.push({ gr: 18, mat: "Płyta", nazwa: `Front Drzwi${layoutText}`, l: formatDim(rectH), w: formatDim(fW), szt: 1 * qtyMult });
                     } else if (fb.type === 'drawers') {
+                        let sysDB = DRAWER_DB[document.getElementById('drawerSystem').value];
+                        let LW = wBox - 2 * tBoard; // Światło wewnętrzne szafki
+
                         fb.drawers.forEach((dr, dIdx) => {
                             let drH = dr.yEnd - dr.yStart;
                             parts.push({ gr: 18, mat: "Płyta", nazwa: `Front Szuflady ${dIdx+1}${layoutText}`, l: formatDim(drH), w: formatDim(fW), szt: 1 * qtyMult });
+
+                            // === DODANIE FORMATEK SZUFLADY (DNO I TYŁ) ===
+                            let typeObj = sysDB.types.find(t => t.id === dr.type);
+                            if (sysDB.cutConfig && typeObj) {
+                                let NL = dr.currentNL;
+                                let gr = sysDB.cutConfig.boardThick;
+                                let dnoW = sysDB.cutConfig.bottomW(LW);
+                                let dnoL = sysDB.cutConfig.bottomL(NL);
+                                let tylW = sysDB.cutConfig.backW(LW);
+                                let tylH = typeObj.boxH;
+
+                                parts.push({ gr: gr, mat: "Płyta", nazwa: `Dno szuflady ${dIdx+1}${layoutText}`, l: formatDim(dnoL), w: formatDim(dnoW), szt: 1 * qtyMult });
+                                parts.push({ gr: gr, mat: "Płyta", nazwa: `Tył szuflady ${dIdx+1}${layoutText}`, l: formatDim(tylH), w: formatDim(tylW), szt: 1 * qtyMult });
+                            }
                         });
                     }
                 });
@@ -1494,8 +1507,8 @@
                             }); 
                             let activeNL = currentSavedNL === undefined || currentSavedNL === 'auto' ? autoSelectedNL : parseFloat(currentSavedNL); 
  
-                            fb.drawers.push({ yStart: currY, yEnd: dTop, guideTop: guideTopY, currentNL: activeNL }); 
-                            drawerGuides.push({ axisYTop: guideTopY, currentNL: activeNL, visualGap: fb.visualGap, localZero: fb.localZero }); 
+                            fb.drawers.push({ yStart: currY, yEnd: dTop, guideTop: guideTopY, currentNL: activeNL, type: fb.manualFronts[j].type }); 
+                            drawerGuides.push({ axisYTop: guideTopY, currentNL: activeNL, type: fb.manualFronts[j].type, visualGap: fb.visualGap, localZero: fb.localZero }); 
                             currY = dTop + fb.gap; 
                         } 
                     } else {  
@@ -1510,8 +1523,8 @@
                                 if(currentLInternal >= (len + sysDB.ltRequired)) autoSelectedNL = len; 
                             }); 
  
-                            fb.drawers.push({ yStart: currY, yEnd: dTop, guideTop: guideTopY, currentNL: autoSelectedNL }); 
-                            drawerGuides.push({ axisYTop: guideTopY, currentNL: autoSelectedNL, visualGap: fb.visualGap, localZero: fb.localZero }); 
+                            fb.drawers.push({ yStart: currY, yEnd: dTop, guideTop: guideTopY, currentNL: autoSelectedNL, type: sysDB.default }); 
+                            drawerGuides.push({ axisYTop: guideTopY, currentNL: autoSelectedNL, type: sysDB.default, visualGap: fb.visualGap, localZero: fb.localZero }); 
                             currY = dTop + fb.gap; 
                         } 
                     } 
@@ -1552,7 +1565,7 @@
 
             // --- SVG RENDER --- 
             let sXCab = 0; let sXBok = wBox + 300; let sXFront = sXBok + dBox + 1200;  
-            let viewTotalW = sFront ? (sXFront + wBox + 500) : (sXBok + dBox + 1000); let viewTotalH = hBox + currentVisualGap + 300;          
+            let viewTotalW = sFront ? (sXFront + wBox + 500) : (sXBok + dBox + 1000); let viewTotalH = hBox + currentVisualGap + 300;         
             let svg = `<svg viewBox="-150 -150 ${viewTotalW} ${viewTotalH}" class="svg-drawing" xmlns="http://www.w3.org/2000/svg">`; 
             svg += `<defs><marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1.5 L 10 5 L 0 8.5 Z" fill="#4a5568" /></marker><marker id="arrow-red" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1.5 L 10 5 L 0 8.5 Z" fill="#e53e3e" /></marker><marker id="arrow-green" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1.5 L 10 5 L 0 8.5 Z" fill="#38a169" /></marker></defs>`; 
             let fontL = 28; let fontM = 24; let fontS = 20; let lineW = 3; 
@@ -1709,7 +1722,8 @@
                 
                 // --- OBRYS SKRZYNKI SZUFLADY NA WIDOKU BOKU 2D ---
                 let nl = dg.currentNL || 400;
-                let dBoxH = 100; 
+                let typeObj = sysDB.types.find(t => t.id === dg.type);
+                let dBoxH = typeObj ? typeObj.boxH : 100; 
                 let drawerSideTop = yT - dBoxH + 20; 
                 let drawerSideLeft = sXBok + dBox - nl; 
                 
