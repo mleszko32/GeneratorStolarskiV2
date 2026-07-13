@@ -903,7 +903,7 @@ document.getElementById('nutTopCheck').checked = cab.nutTopCheck !== undefined ?
             let hBox = val('hBox'); let wBox = val('wBox'); let dBox = val('dBox'); let tBoard = val('tBoard'); 
             let qPol = val('qPol'); let offsetPodporki = val('offsetPodporki'); let cokol = val('cokol'); 
             let backType = document.getElementById('backType').value; 
-            let nutDepthVal = val('nutPosition');; let grPlecy = val('grPlecy');
+            let nutDepthVal = val('nutPosition'); let grPlecy = val('grPlecy');
             let luzBocznyPolki = val('luzBocznyPolki');
 
             let totalSpaces = qPol + 1;
@@ -937,8 +937,11 @@ document.getElementById('nutTopCheck').checked = cab.nutTopCheck !== undefined ?
             let parts = [];
 
             subCabinetsLocal.forEach((cab, i) => {
-                let cabH = cab.endY - cab.startY;
-                let sideH = cabH;
+    let nutBottom = isChecked('nutBottomCheck');
+    let nutTop = isChecked('nutTopCheck');
+
+    let cabH = cab.endY - cab.startY;
+    let sideH = cabH;
                 
                 let wDno = wBox; let wGora = wBox;
 
@@ -952,16 +955,7 @@ document.getElementById('nutTopCheck').checked = cab.nutTopCheck !== undefined ?
                 }
 
                 parts.push({ gr: tBoard, mat: "Płyta", nazwa: `Bok (Moduł ${i+1})`, l: formatDim(sideH), w: formatDim(dBox), szt: 2 });
-                let nutBottom = isChecked('nutBottomCheck');
-let nutTop = isChecked('nutTopCheck');
-
-let dDno = (backType === 'nut' && !nutBottom) ? (dBox - nutDepthVal) : dBox;
-let dGora = (backType === 'nut' && !nutTop) ? (dBox - nutDepthVal) : dBox;
-parts.push({ gr: tBoard, mat: "Płyta", nazwa: (i===0?"Wieniec Dolny":`Dno konstrukcyjne (M${i+1})`), l: formatDim(wDno), w: formatDim(dDno), szt: 1 });
-parts.push({ gr: tBoard, mat: "Płyta", nazwa: (i===subCabinetsLocal.length-1?"Wieniec Górny":`Góra konstrukcyjna (M${i+1})`), l: formatDim(wGora), w: formatDim(dGora), szt: 1 });
-                if (i === 0 && cokol > 0) {
-                    parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Cokół (Front/Tył)", l: formatDim(wBox), w: formatDim(cokol), szt: 2 });
-                }
+                
 
                 const WCIECIE_NUT = val('nutGroove');
                 const LUZ_NUT = 2;      // Luz technologiczny na każdą stronę
@@ -996,7 +990,33 @@ if (backType === 'nut') {
                     parts.push({ gr: grPlecy, mat: "HDF", nazwa: `Plecy (Moduł ${i+1})`, l: formatDim(backH), w: formatDim(backW), szt: 1 });
                 }
             });
+// === GENEROWANIE WIEŃCÓW I PÓŁEK KONSTRUKCYJNYCH ===
+let nutBot = isChecked('nutBottomCheck');
+let nutTp = isChecked('nutTopCheck');
 
+// 1. Wieniec Dolny
+let wDno = (kTyp === 'nakladane') ? wBox : wBox - 2*tBoard;
+let dDno = (backType === 'nut' && !nutBot) ? (dBox - nutDepthVal) : dBox;
+parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Wieniec", l: formatDim(wDno), w: formatDim(dDno), szt: 1 });
+
+// 2. Wieniec Górny
+let wGora = (kTyp === 'nakladane') ? wBox : wBox - 2*tBoard;
+let dGora = (backType === 'nut' && !nutTp) ? (dBox - nutDepthVal) : dBox;
+parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Wieniec", l: formatDim(wGora), w: formatDim(dGora), szt: 1 });
+
+// 3. Półki Konstrukcyjne
+let polkiKonstrukcyjne = structuralShelves.filter(Boolean).length;
+if (polkiKonstrukcyjne > 0) {
+    let wStruct = wBox - 2*tBoard;
+    let dStruct = (backType === 'nut') ? (dBox - nutDepthVal) : dBox;
+    // Wrzucamy je na listę również jako "Wieniec"
+    parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Wieniec", l: formatDim(wStruct), w: formatDim(dStruct), szt: polkiKonstrukcyjne });
+}
+
+// === GENEROWANIE COKOŁU (1 sztuka, wchodzi między boki) ===
+if (cokol > 0) {
+    parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Cokół", l: formatDim(wBox - 2 * tBoard), w: formatDim(cokol), szt: 1 });
+}
             if (polkiRuchome.length > 0) {
                 // Półka ruchoma spłycona o dystans nutu od tyłu (nutDepth), grubość HDF i dodatkowe 5mm luzu
                 let pDepthRozkroj = (backType === 'nut') ? (dBox - nutDepthVal - 5) : (dBox - 15);
@@ -1042,7 +1062,18 @@ if (backType === 'nut') {
                     </tr>
                 </thead>
                 <tbody>`;
-
+// === GRUPOWANIE I SUMOWANIE IDENTYCZNYCH FORMATEK ===
+let groupedParts = [];
+parts.forEach(p => {
+    // Szukamy, czy na liście jest już formatka o takiej samej nazwie, materiale i wymiarach
+    let existing = groupedParts.find(x => x.nazwa === p.nazwa && x.l === p.l && x.w === p.w && x.gr === p.gr && x.mat === p.mat);
+    if (existing) {
+        existing.szt += p.szt; // Jeśli tak, dodajemy sztuki
+    } else {
+        groupedParts.push({...p}); // Jeśli nie, tworzymy nowy wpis
+    }
+});
+parts = groupedParts; // Zastępujemy starą listę zgrupowaną wersją
             parts.sort((a,b) => b.gr - a.gr);
     
             let currentGr = 0;
