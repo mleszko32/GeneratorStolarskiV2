@@ -169,7 +169,27 @@
                     </select> 
                 </div>
                 <div><label>Grubość pleców (mm)</label><input type="number" id="grPlecy" value="3" min="0" oninput="updateTotalDepth(); run();"></div>
-                <div id="nutDepthField" style="display:none; grid-column: span 2;"><label>Głębokość nutu (mm)</label><input type="number" id="nutDepth" value="20" min="0" oninput="run()"></div> 
+               <div id="nutDepthField" style="display:none; grid-column: span 2; background: #e8f0fe; padding: 12px; border-radius: 6px; border-left: 4px solid #1F4E79;">
+    <label style="margin-top:0; border-bottom: 1px solid #b3cce6; padding-bottom: 4px; color: #1F4E79;">Parametry Nuta (Wpuszczenia)</label>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top: 8px;">
+        <div>
+            <label style="margin-top:0;">Odsunięcie od tyłu (mm)</label>
+            <input type="number" id="nutPosition" value="20" min="0" oninput="run()">
+        </div>
+        <div>
+            <label style="margin-top:0;">Głębokość frezu w płycie (mm)</label>
+            <input type="number" id="nutGroove" value="8" min="0" oninput="run()">
+        </div>
+    </div>
+    <div style="display:flex; gap:15px; margin-top:10px;">
+        <label style="margin:0; font-weight:normal; font-size:0.85rem; display:flex; align-items:center; gap:5px; cursor:pointer;">
+            <input type="checkbox" id="nutBottomCheck" checked onchange="run()" style="width:auto; margin:0;"> Frez w dnie
+        </label>
+        <label style="margin:0; font-weight:normal; font-size:0.85rem; display:flex; align-items:center; gap:5px; cursor:pointer;">
+            <input type="checkbox" id="nutTopCheck" checked onchange="run()" style="width:auto; margin:0;"> Frez w wieńcu górnym
+        </label>
+    </div>
+</div>
             </div> 
  
             <h3>Fronty (Główne domyślne nałożenia)</h3> 
@@ -342,9 +362,17 @@
         }; 
  
         // ---------------- FUNKCJE POMOCNICZE ---------------- //
-        function val(id) { return parseFloat(document.getElementById(id).value) || 0; } 
-        function isChecked(id) { return document.getElementById(id).checked; } 
-        function formatDim(val) { let num = Number(val); return Number.isInteger(num) ? num : parseFloat(num.toFixed(1)); }
+        function val(id) { 
+            let el = document.getElementById(id);
+            return el ? (parseFloat(el.value) || 0) : 0; 
+        } 
+        function isChecked(id) { 
+            let el = document.getElementById(id);
+            return el ? el.checked : false; 
+        } 
+        function formatDim(val) { 
+            let num = Number(val); return Number.isInteger(num) ? num : parseFloat(num.toFixed(1)); 
+        }
 
         function switchView(mode) {
             const svgCont = document.getElementById('svgContainer');
@@ -427,7 +455,7 @@
             let cokol = val('cokol'); let kTyp = document.getElementById('kTyp').value;
             let backType = document.getElementById('backType').value; let grPlecy = val('grPlecy');
             
-            let nutPosition = val('nutPosition'); 
+            let nutDepthVal = val('nutDepth'); 
             let nutGroove = val('nutGroove');
             let nutBottom = isChecked('nutBottomCheck');
             let nutTop = isChecked('nutTopCheck');
@@ -459,11 +487,11 @@
             // Wieńce - z uwzględnieniem skracania
             let wWieniec = (kTyp === 'nakladane') ? wBox : wBox - 2*tBoard;
             
-            let dDno = (backType === 'nut' && !nutBottom) ? (dBox - nutPosition - grPlecy) : dBox;
+            let dDno = (backType === 'nut' && !nutBottom) ? (dBox - nutDepthVal - grPlecy) : dBox;
             let zDno = dBox - dDno/2; // Zrównane do frontu
             addPart(wWieniec, tBoard, dDno, 0, cokol + tBoard/2, zDno, matKorpus); 
             
-            let dGora = (backType === 'nut' && !nutTop) ? (dBox - nutPosition - grPlecy) : dBox;
+            let dGora = (backType === 'nut' && !nutTop) ? (dBox - nutDepthVal - grPlecy) : dBox;
             let zGora = dBox - dGora/2;
             addPart(wWieniec, tBoard, dGora, 0, hBox - tBoard/2, zGora, matKorpus); 
 
@@ -473,14 +501,27 @@
             let backW = wBox; let backH = hBox; let backZ = -grPlecy/2; let backY = sideBot + sideH/2;
 
             if (backType === 'nut') {
-                backW = wBox - 2*tBoard + 2*nutGroove - 2*LUZ_NUT;
-                backH = sideH - 2*tBoard; // Światło
-                backY = sideBot + tBoard + backH/2; 
-
-                if (nutBottom) { backH += (nutGroove - LUZ_NUT); backY -= (nutGroove - LUZ_NUT)/2; }
-                if (nutTop) { backH += (nutGroove - LUZ_NUT); backY += (nutGroove - LUZ_NUT)/2; }
-                backZ = nutPosition + grPlecy/2; 
-            } else {
+    backW = wBox - 2*tBoard + 2*nutGroove - 2*LUZ_NUT;
+    
+    let bBottom = sideBot;
+    let bTop = sideTop;
+    
+    if (nutBottom) {
+        bBottom += tBoard - (nutGroove - LUZ_NUT);
+    } else {
+        bBottom += 2; // Odsunięcie od krawędzi dołu o 2mm
+    }
+    
+    if (nutTop) {
+        bTop -= tBoard - (nutGroove - LUZ_NUT);
+    } else {
+        bTop -= 2; // Odsunięcie od krawędzi góry o 2mm
+    }
+    
+    backH = bTop - bBottom;
+    backY = bBottom + backH/2;
+    backZ = nutDepthVal + grPlecy/2; 
+} else {
                 backH = sideH; backY = sideBot + sideH/2;
             }
             addPart(backW, backH, grPlecy, 0, backY, backZ, matHDF);
@@ -489,7 +530,7 @@
             if (window.lastOsie && window.lastOsie.length > 0) {
                 window.lastOsie.forEach(osData => {
                     let yCenter = osData.spod + tBoard/2; 
-                    let shelfBackZ = (backType === 'nut') ? (nutPosition + grPlecy + 1) : 0; 
+                    let shelfBackZ = (backType === 'nut') ? (nutDepthVal + 1) : 0;
                     let shelfFrontZ = dBox - 5; 
                     let pDepth = Math.max(shelfFrontZ - shelfBackZ, 10); 
                     let pZCenter = shelfBackZ + pDepth/2;
@@ -624,7 +665,7 @@
                 drawerSystem: document.getElementById('drawerSystem').value, 
                 customDrawerAxis: val('customDrawerAxis'), 
                 backType: document.getElementById('backType').value, grPlecy: val('grPlecy'),
-                nutPosition: val('nutPosition'), nutGroove: val('nutGroove'),
+                nutPosition: val('nutDepth'), nutGroove: val('nutGroove'),
                 nutBottomCheck: isChecked('nutBottomCheck'), nutTopCheck: isChecked('nutTopCheck'),
                 spaceLocks: JSON.parse(JSON.stringify(spaceLocks)), 
                 structuralShelves: JSON.parse(JSON.stringify(structuralShelves)) 
@@ -645,7 +686,7 @@
                 drawerSystem: document.getElementById('drawerSystem').value, 
                 customDrawerAxis: val('customDrawerAxis'), 
                 backType: document.getElementById('backType').value, grPlecy: val('grPlecy'), 
-                nutPosition: val('nutPosition'), nutGroove: val('nutGroove'),
+                nutPosition: val('nutDepth'), nutGroove: val('nutGroove'),
                 nutBottomCheck: isChecked('nutBottomCheck'), nutTopCheck: isChecked('nutTopCheck'),
                 spaceLocks: JSON.parse(JSON.stringify(spaceLocks)), 
                 structuralShelves: JSON.parse(JSON.stringify(structuralShelves)) 
@@ -673,12 +714,11 @@
             
             document.getElementById('backType').value = cab.backType !== undefined ? cab.backType : 'nakladane'; 
             document.getElementById('grPlecy').value = cab.grPlecy !== undefined ? cab.grPlecy : 3;
-            // Backward compatibility for old nutDepth
-            document.getElementById('nutPosition').value = cab.nutPosition !== undefined ? cab.nutPosition : (cab.nutDepth !== undefined ? cab.nutDepth : 20); 
-            document.getElementById('nutGroove').value = cab.nutGroove !== undefined ? cab.nutGroove : 13; 
-            document.getElementById('nutBottomCheck').checked = cab.nutBottomCheck || false;
-            document.getElementById('nutTopCheck').checked = cab.nutTopCheck || false;
-             
+            // Wczytywanie parametrów Nuta
+document.getElementById('nutPosition').value = cab.nutPosition !== undefined ? cab.nutPosition : 20; 
+document.getElementById('nutGroove').value = cab.nutGroove !== undefined ? cab.nutGroove : 8; 
+document.getElementById('nutBottomCheck').checked = cab.nutBottomCheck !== undefined ? cab.nutBottomCheck : true;
+document.getElementById('nutTopCheck').checked = cab.nutTopCheck !== undefined ? cab.nutTopCheck : true;
             toggleBackFields(); 
             let loadedSys = cab.drawerSystem !== undefined ? cab.drawerSystem : "44"; 
             document.getElementById('drawerSystem').value = loadedSys; 
@@ -863,7 +903,7 @@
             let hBox = val('hBox'); let wBox = val('wBox'); let dBox = val('dBox'); let tBoard = val('tBoard'); 
             let qPol = val('qPol'); let offsetPodporki = val('offsetPodporki'); let cokol = val('cokol'); 
             let backType = document.getElementById('backType').value; 
-            let nutPosition = val('nutPosition'); let grPlecy = val('grPlecy');
+            let nutDepthVal = val('nutDepth'); let grPlecy = val('grPlecy');
             let luzBocznyPolki = val('luzBocznyPolki');
 
             let totalSpaces = qPol + 1;
@@ -912,9 +952,14 @@
                 }
 
                 parts.push({ gr: tBoard, mat: "Płyta", nazwa: `Bok (Moduł ${i+1})`, l: formatDim(sideH), w: formatDim(dBox), szt: 2 });
-                parts.push({ gr: tBoard, mat: "Płyta", nazwa: (i===0?"Wieniec Dolny":`Dno konstrukcyjne (M${i+1})`), l: formatDim(wDno), w: formatDim(dBox), szt: 1 });
-                parts.push({ gr: tBoard, mat: "Płyta", nazwa: (i===subCabinetsLocal.length-1?"Wieniec Górny":`Góra konstrukcyjna (M${i+1})`), l: formatDim(wGora), w: formatDim(dBox), szt: 1 });
-                
+                let nutBottom = isChecked('nutBottomCheck');
+let nutTop = isChecked('nutTopCheck');
+
+let dDno = (backType === 'nut' && !nutBottom) ? (dBox - nutDepthVal - grPlecy) : dBox;
+let dGora = (backType === 'nut' && !nutTop) ? (dBox - nutDepthVal - grPlecy) : dBox;
+
+parts.push({ gr: tBoard, mat: "Płyta", nazwa: (i===0?"Wieniec Dolny":`Dno konstrukcyjne (M${i+1})`), l: formatDim(wDno), w: formatDim(dDno), szt: 1 });
+parts.push({ gr: tBoard, mat: "Płyta", nazwa: (i===subCabinetsLocal.length-1?"Wieniec Górny":`Góra konstrukcyjna (M${i+1})`), l: formatDim(wGora), w: formatDim(dGora), szt: 1 });
                 if (i === 0 && cokol > 0) {
                     parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Cokół (Front/Tył)", l: formatDim(wBox), w: formatDim(cokol), szt: 2 });
                 }
@@ -923,16 +968,31 @@
                 const LUZ_NUT = 2;      // Luz technologiczny na każdą stronę
 
                 let backW = 0; let backH = 0;
-                if (backType === 'nut') {
-                    // Szerokość: Światło (wBox - 2*tBoard) + wcięcia (2*13) - luzy (2*2)
-                    backW = wBox - 2*tBoard + 2*WCIECIE_NUT - 2*LUZ_NUT; 
-                    backH = cabH - 2*tBoard - 2*LUZ_NUT;
-                    if (i === 0 && isChecked('nutBottomCheck')) backH += WCIECIE_NUT;
-                    if (i === subCabinetsLocal.length - 1 && isChecked('nutTopCheck')) backH += WCIECIE_NUT;
-                } else {
-                    backW = wBox - 2;
-                    backH = cabH - 2;
-                }
+if (backType === 'nut') {
+    backW = wBox - 2*tBoard + 2*WCIECIE_NUT - 2*LUZ_NUT; 
+    backH = cabH; // Zaczynamy od pełnego gabarytu modułu (światło + ewentualne wieńce)
+    
+    if (i === 0) { // Na samym dole
+        if (nutBottom) {
+            backH -= tBoard; // Odejdzie wieniec (bo opieramy się na jego wewnętrznej stronie)
+            backH += WCIECIE_NUT - LUZ_NUT; // Dodajemy wejście we frez
+        } else {
+            backH -= 2; // Brak frezu = plecy idą na maksa w dół - 2mm luzu
+        }
+    }
+    
+    if (i === subCabinetsLocal.length - 1) { // Na samej górze
+        if (nutTop) {
+            backH -= tBoard; 
+            backH += WCIECIE_NUT - LUZ_NUT; 
+        } else {
+            backH -= 2; // Brak frezu = plecy idą na maksa w górę - 2mm luzu
+        }
+    }
+} else {
+    backW = wBox - 2;
+    backH = cabH - 2;
+}
                 if (backH > 0) {
                     parts.push({ gr: grPlecy, mat: "HDF", nazwa: `Plecy (Moduł ${i+1})`, l: formatDim(backH), w: formatDim(backW), szt: 1 });
                 }
@@ -940,7 +1000,7 @@
 
             if (polkiRuchome.length > 0) {
                 // Półka ruchoma spłycona o dystans nutu od tyłu (nutDepth), grubość HDF i dodatkowe 5mm luzu
-                let pDepthRozkroj = (backType === 'nut') ? (dBox - nutPosition - grPlecy - 5) : (dBox - 15);
+                let pDepthRozkroj = (backType === 'nut') ? (dBox - nutDepthVal - 5) : (dBox - 15);
                 parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Półka ruchoma", l: formatDim(wBox - 2*tBoard - luzBocznyPolki), w: formatDim(pDepthRozkroj), szt: polkiRuchome.length });
             }
 
@@ -1016,7 +1076,7 @@
             let hBox = val('hBox'); let wBox = val('wBox'); let dBox = val('dBox'); let tBoard = val('tBoard'); 
             let qPol = val('qPol'); let offsetPodporki = val('offsetPodporki'); let cokol = val('cokol'); 
             let backType = document.getElementById('backType').value; 
-            let nutPosition = val('nutPosition'); let grPlecy = val('grPlecy');
+            let nutDepthVal = val('nutDepth'); let grPlecy = val('grPlecy');
             let rcMode = isChecked('rcMode');
  
             let sClearance = isChecked('sClearance'); let sShelfAxis = isChecked('sShelfAxis'); 
@@ -1038,7 +1098,7 @@
             let isAutoZaw = isChecked('autoZaw'); 
             let sysDB = DRAWER_DB[document.getElementById('drawerSystem').value]; 
  
-            let currentLInternal = (backType === 'nut') ? (dBox - nutPosition - grPlecy) : (dBox - 18); 
+            let currentLInternal = (backType === 'nut') ? (dBox - nutDepthVal - grPlecy) : (dBox - 18); 
             hideError(); 
  
             let totalSpaces = qPol + 1; 
@@ -1474,10 +1534,10 @@
  
             let innerX = sXCab + tBoard; let innerW = wBox - 2*tBoard; let centerX = sXCab + wBox/2; 
             
-            let dystansTyl = (backType === 'nut') ? (nutDepth + grPlecy + 37) : 37;
-            let hBackX = sXBok + dystansTyl; 
+            let currentNutDepth = val('nutDepth');
+            let dystansTyl = (backType === 'nut') ? (currentNutDepth + 37) : 37;            let hBackX = sXBok + dystansTyl; 
             let hFrontX = sXBok + dBox - 37; 
-            let plecyX_Bok = (backType === 'nut') ? (sXBok + nutDepth) : (sXBok - grPlecy);
+            let plecyX_Bok = (backType === 'nut') ? (sXBok + currentNutDepth) : (sXBok - grPlecy);
             let grFrontuWizualna = 18;
             let frontX_Bok = sXBok + dBox;
             let laneHingeHoles = sXBok + dBox + 40;  
