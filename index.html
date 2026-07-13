@@ -455,7 +455,7 @@
             let cokol = val('cokol'); let kTyp = document.getElementById('kTyp').value;
             let backType = document.getElementById('backType').value; let grPlecy = val('grPlecy');
             
-            let nutDepthVal = val('nutDepth'); 
+            let nutDepthVal = val('nutPosition'); 
             let nutGroove = val('nutGroove');
             let nutBottom = isChecked('nutBottomCheck');
             let nutTop = isChecked('nutTopCheck');
@@ -487,11 +487,11 @@
             // Wieńce - z uwzględnieniem skracania
             let wWieniec = (kTyp === 'nakladane') ? wBox : wBox - 2*tBoard;
             
-            let dDno = (backType === 'nut' && !nutBottom) ? (dBox - nutDepthVal - grPlecy) : dBox;
+            let dDno = (backType === 'nut' && !nutBottom) ? (dBox - nutDepthVal) : dBox;
             let zDno = dBox - dDno/2; // Zrównane do frontu
             addPart(wWieniec, tBoard, dDno, 0, cokol + tBoard/2, zDno, matKorpus); 
             
-            let dGora = (backType === 'nut' && !nutTop) ? (dBox - nutDepthVal - grPlecy) : dBox;
+            let dGora = (backType === 'nut' && !nutTop) ? (dBox - nutDepthVal) : dBox;
             let zGora = dBox - dGora/2;
             addPart(wWieniec, tBoard, dGora, 0, hBox - tBoard/2, zGora, matKorpus); 
 
@@ -903,7 +903,7 @@ document.getElementById('nutTopCheck').checked = cab.nutTopCheck !== undefined ?
             let hBox = val('hBox'); let wBox = val('wBox'); let dBox = val('dBox'); let tBoard = val('tBoard'); 
             let qPol = val('qPol'); let offsetPodporki = val('offsetPodporki'); let cokol = val('cokol'); 
             let backType = document.getElementById('backType').value; 
-            let nutDepthVal = val('nutDepth'); let grPlecy = val('grPlecy');
+            let nutDepthVal = val('nutPosition');; let grPlecy = val('grPlecy');
             let luzBocznyPolki = val('luzBocznyPolki');
 
             let totalSpaces = qPol + 1;
@@ -955,9 +955,8 @@ document.getElementById('nutTopCheck').checked = cab.nutTopCheck !== undefined ?
                 let nutBottom = isChecked('nutBottomCheck');
 let nutTop = isChecked('nutTopCheck');
 
-let dDno = (backType === 'nut' && !nutBottom) ? (dBox - nutDepthVal - grPlecy) : dBox;
-let dGora = (backType === 'nut' && !nutTop) ? (dBox - nutDepthVal - grPlecy) : dBox;
-
+let dDno = (backType === 'nut' && !nutBottom) ? (dBox - nutDepthVal) : dBox;
+let dGora = (backType === 'nut' && !nutTop) ? (dBox - nutDepthVal) : dBox;
 parts.push({ gr: tBoard, mat: "Płyta", nazwa: (i===0?"Wieniec Dolny":`Dno konstrukcyjne (M${i+1})`), l: formatDim(wDno), w: formatDim(dDno), szt: 1 });
 parts.push({ gr: tBoard, mat: "Płyta", nazwa: (i===subCabinetsLocal.length-1?"Wieniec Górny":`Góra konstrukcyjna (M${i+1})`), l: formatDim(wGora), w: formatDim(dGora), szt: 1 });
                 if (i === 0 && cokol > 0) {
@@ -1076,7 +1075,7 @@ if (backType === 'nut') {
             let hBox = val('hBox'); let wBox = val('wBox'); let dBox = val('dBox'); let tBoard = val('tBoard'); 
             let qPol = val('qPol'); let offsetPodporki = val('offsetPodporki'); let cokol = val('cokol'); 
             let backType = document.getElementById('backType').value; 
-            let nutDepthVal = val('nutDepth'); let grPlecy = val('grPlecy');
+            let nutDepthVal = val('nutPosition');; let grPlecy = val('grPlecy');
             let rcMode = isChecked('rcMode');
  
             let sClearance = isChecked('sClearance'); let sShelfAxis = isChecked('sShelfAxis'); 
