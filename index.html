@@ -324,14 +324,14 @@
                 yHolesMap: { 250: [96], 300: [128], 350: [128], 400: [192], 450: [192], 500: [224], 550: [224], 600: [224, 352] }, 
                 types: [ { id: "A", label: "A (Niska)", minFront: 105, boxH: 84 }, { id: "B", label: "B (Średnia)", minFront: 160, boxH: 116 }, { id: "C", label: "C (Wysoka)", minFront: 192, boxH: 167 }, { id: "D", label: "D (B. Wysoka)", minFront: 224, boxH: 199 } ], 
                 default: "C",
-                cutConfig: { boardThick: 16, bottomW: (LW) => LW - 87, bottomL: (NL) => NL - 24, backW: (LW) => LW - 87 }
+                cutConfig: { boardThick: 16, bottomW: (LW) => LW - 75, bottomL: (NL) => NL - 24, backW: (LW) => LW - 87 }
             }, 
             "44_18": { 
                 name: "GTV Axis Pro (Dno 18mm)", lengths: [250, 300, 350, 400, 450, 500, 550, 600], ltRequired: 5, 
                 yHolesMap: { 250: [96], 300: [128], 350: [128], 400: [192], 450: [192], 500: [224], 550: [224], 600: [224, 352] }, 
                 types: [ { id: "A", label: "A (H=86)", minFront: 115, boxH: 84 }, { id: "B", label: "B (H=120)", minFront: 147, boxH: 116 }, { id: "C", label: "C (H=168)", minFront: 198, boxH: 167 }, { id: "D", label: "D (H=200)", minFront: 230, boxH: 199 } ], 
                 default: "C",
-                cutConfig: { boardThick: 18, bottomW: (LW) => LW - 87, bottomL: (NL) => NL - 24, backW: (LW) => LW - 87 }
+                cutConfig: { boardThick: 18, bottomW: (LW) => LW - 75, bottomL: (NL) => NL - 24, backW: (LW) => LW - 87 }
             },
             "54": { 
                 name: "Blum Merivobox", lengths: [270, 300, 350, 400, 450, 500, 550, 600], ltRequired: 3, 
@@ -631,7 +631,7 @@
                 isDragging = true; startX = e.clientX - panX; startY = e.clientY - panY; 
             }); 
             window.addEventListener('mousemove', (e) => { 
-                if (!isDragging) return; panX = e.clientX - startX; panY = e.clientY - startY; applyTransform(); 
+                if (!isDragging) return; panX = e.clientX - startX; panY = e.clientY - panY; applyTransform(); 
             }); 
             window.addEventListener('mouseup', () => { isDragging = false; }); 
             container.addEventListener('mouseleave', () => { isDragging = false; }); 
@@ -1022,7 +1022,7 @@
 
             if (polkiRuchome.length > 0) {
                 let pDepthRozkroj = (backType === 'nut') ? (dBox - nutDepthVal - 5) : (dBox - 15);
-                parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Półka ruchoma", l: formatDim(wBox - 2*tBoard - luzBocznyPolki), w: formatDim(pDepthRozkroj), szt: polkiRuchome.length });
+                parts.push({ gr: tBoard, mat: "Płyta", nazwa: "Półka", l: formatDim(wBox - 2*tBoard - luzBocznyPolki), w: formatDim(pDepthRozkroj), szt: polkiRuchome.length });
             }
 
             if (window.lastFrontBlocks) {
@@ -1033,18 +1033,18 @@
                     let fW_full = (wBox - 2*tBoard) + fb.nL + fb.nR;
                     let fW = (layout === 'double' || layout === 'left' || layout === 'right') ? (fW_full - fb.gap) / 2 : fW_full;
                     let qtyMult = (layout === 'double') ? 2 : 1;
-                    let layoutText = layout === 'left' ? " (Lewy)" : (layout === 'right' ? " (Prawy)" : (layout === 'double' ? " (L+P)" : ""));
+                    let layoutText = ""; // Usunięto tekst (Lewy/Prawy) bo niepotrzebny w rozkroju
 
                     if (fb.type === 'door') {
                         let rectH = fb.yEnd - fb.yStart;
-                        parts.push({ gr: 18, mat: "Płyta", nazwa: `Front Drzwi${layoutText}`, l: formatDim(rectH), w: formatDim(fW), szt: 1 * qtyMult });
+                        parts.push({ gr: 18, mat: "Płyta", nazwa: "Front", l: formatDim(rectH), w: formatDim(fW), szt: 1 * qtyMult });
                     } else if (fb.type === 'drawers') {
                         let sysDB = DRAWER_DB[document.getElementById('drawerSystem').value];
                         let LW = wBox - 2 * tBoard; // Światło wewnętrzne szafki
 
                         fb.drawers.forEach((dr, dIdx) => {
                             let drH = dr.yEnd - dr.yStart;
-                            parts.push({ gr: 18, mat: "Płyta", nazwa: `Front Szuflady ${dIdx+1}${layoutText}`, l: formatDim(drH), w: formatDim(fW), szt: 1 * qtyMult });
+                            parts.push({ gr: 18, mat: "Płyta", nazwa: "Czółko", l: formatDim(drH), w: formatDim(fW), szt: 1 * qtyMult });
 
                             // === DODANIE FORMATEK SZUFLADY (DNO I TYŁ) ===
                             let typeObj = sysDB.types.find(t => t.id === dr.type);
@@ -1056,8 +1056,8 @@
                                 let tylW = sysDB.cutConfig.backW(LW);
                                 let tylH = typeObj.boxH;
 
-                                parts.push({ gr: gr, mat: "Płyta", nazwa: `Dno szuflady ${dIdx+1}${layoutText}`, l: formatDim(dnoL), w: formatDim(dnoW), szt: 1 * qtyMult });
-                                parts.push({ gr: gr, mat: "Płyta", nazwa: `Tył szuflady ${dIdx+1}${layoutText}`, l: formatDim(tylH), w: formatDim(tylW), szt: 1 * qtyMult });
+                                parts.push({ gr: gr, mat: "Płyta", nazwa: "Dno", l: formatDim(dnoL), w: formatDim(dnoW), szt: 1 * qtyMult });
+                                parts.push({ gr: gr, mat: "Płyta", nazwa: "Tył", l: formatDim(tylH), w: formatDim(tylW), szt: 1 * qtyMult });
                             }
                         });
                     }
