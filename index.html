@@ -324,7 +324,7 @@
                 yHolesMap: { 250: [96], 300: [128], 350: [128], 400: [192], 450: [192], 500: [224], 550: [224], 600: [224, 352] }, 
                 types: [ { id: "A", label: "A (Niska)", minFront: 105, boxH: 84 }, { id: "B", label: "B (Średnia)", minFront: 160, boxH: 116 }, { id: "C", label: "C (Wysoka)", minFront: 192, boxH: 167 }, { id: "D", label: "D (B. Wysoka)", minFront: 224, boxH: 199 } ], 
                 default: "C",
-                cutConfig: { boardThick: 16, bottomW: (LW) => LW - 75, bottomL: (NL) => NL - 24, backW: (LW) => LW - 87 }
+                cutConfig: { boardThick: 16, bottomW: (LW) => LW - 87, bottomL: (NL) => NL - 24, backW: (LW) => LW - 87 }
             }, 
             "44_18": { 
                 name: "GTV Axis Pro (Dno 18mm)", lengths: [250, 300, 350, 400, 450, 500, 550, 600], ltRequired: 5, 
@@ -1033,14 +1033,14 @@
                     let fW_full = (wBox - 2*tBoard) + fb.nL + fb.nR;
                     let fW = (layout === 'double' || layout === 'left' || layout === 'right') ? (fW_full - fb.gap) / 2 : fW_full;
                     let qtyMult = (layout === 'double') ? 2 : 1;
-                    let layoutText = ""; // Usunięto tekst (Lewy/Prawy) bo niepotrzebny w rozkroju
+                    let layoutText = ""; 
 
                     if (fb.type === 'door') {
                         let rectH = fb.yEnd - fb.yStart;
                         parts.push({ gr: 18, mat: "Płyta", nazwa: "Front", l: formatDim(rectH), w: formatDim(fW), szt: 1 * qtyMult });
                     } else if (fb.type === 'drawers') {
                         let sysDB = DRAWER_DB[document.getElementById('drawerSystem').value];
-                        let LW = wBox - 2 * tBoard; // Światło wewnętrzne szafki
+                        let LW = wBox - 2 * tBoard; 
 
                         fb.drawers.forEach((dr, dIdx) => {
                             let drH = dr.yEnd - dr.yStart;
@@ -1113,6 +1113,74 @@
 
         function closeCutList() { document.getElementById('cutListModal').style.display = 'none'; }
  
+        // ---------------- NOWE FUNKCJE DZIELENIA I USUWANIA PRZESTRZENI ---------------- //
+        function splitSpaceExact(index) {
+            let tBoard = val('tBoard');
+            let currentSpace = spaceLocks[index];
+            let currentH = currentSpace.currentVal;
+
+            if (currentH <= tBoard + 20) {
+                showError("Przestrzeń zbyt mała do podziału!");
+                return;
+            }
+
+            let sysDB = DRAWER_DB[document.getElementById('drawerSystem').value];
+
+            // 1. Zabezpieczamy wszystkie inne przestrzenie kłódką, żeby NIC się nie przesunęło
+            for (let i = 0; i < spaceLocks.length; i++) {
+                if (!spaceLocks[i].locked) {
+                    spaceLocks[i].locked = true;
+                    spaceLocks[i].manualVal = spaceLocks[i].currentVal;
+                }
+            }
+
+            // 2. Obliczamy wymiary dla dwóch nowych połówek (odejmując grubość półki)
+            let newLightTotal = currentH - tBoard;
+            let half1 = Math.floor(newLightTotal / 2);
+            let half2 = newLightTotal - half1;
+
+            // 3. Aktualizujemy klikniętą przestrzeń
+            currentSpace.locked = true;
+            currentSpace.manualVal = half1;
+
+            // 4. Tworzymy nową przestrzeń, która wejdzie nad nią
+            let newSpace = {
+                locked: true, 
+                manualVal: half2, 
+                currentVal: half2,
+                hasDrawers: false, frontType: 'merged', frontLayout: 'full', drawerMode: 'auto', qDrawers: 3,
+                manualFronts: [
+                    { height: 200, type: sysDB.default },
+                    { height: 200, type: sysDB.default },
+                    { height: 140, type: sysDB.default }
+                ],
+                topGapToAxis: 12, gapTop: 0, gapBottom: 0, manualDrawerNL: {}
+            };
+
+            // 5. Wstawiamy w tablicę dokładnie w to miejsce
+            spaceLocks.splice(index + 1, 0, newSpace);
+            // Dodajemy nową "ruchomą" półkę (z nawiertami podpórek)
+            structuralShelves.splice(index, 0, false);
+
+            // 6. Zwiększamy liczbę półek w głównym panelu po lewej w tle
+            document.getElementById('qPol').value = parseInt(val('qPol')) + 1;
+
+            run();
+        }
+
+        function removeSpace(index) {
+            let qPolVal = parseInt(val('qPol'));
+            if (qPolVal <= 0 || spaceLocks.length <= 1) return;
+            if(!confirm("Usunąć tę przestrzeń? Inne automatyczne wymiary wypełnią wolne miejsce.")) return;
+
+            spaceLocks.splice(index, 1);
+            let shelfIndexToRemove = (index === 0) ? 0 : index - 1;
+            structuralShelves.splice(shelfIndexToRemove, 1);
+
+            document.getElementById('qPol').value = qPolVal - 1;
+            run();
+        }
+
         // ---------------- GŁÓWNA PĘTLA OBLICZENIOWA (2D + SVG) ---------------- //
         function run() { 
             let kTyp = document.getElementById('kTyp').value; 
@@ -1129,7 +1197,7 @@
             let sDrawerYDim = isChecked('sDrawerYDim'); 
  
             let topHoleOffset = getTopHoleOffset(); 
-            
+             
             let nTopGlobal = val('nTop'); 
             let nBottomGlobal = val('nBottom'); 
             let nLeftGlobal = val('nLeft'); 
@@ -1145,7 +1213,7 @@
             hideError(); 
  
             let totalSpaces = qPol + 1; 
-            
+             
             while(spaceLocks.length < totalSpaces) {
                 spaceLocks.push({  
                     locked: false, manualVal: 0, currentVal: 0, 
@@ -1162,12 +1230,12 @@
             if (spaceLocks.length > totalSpaces) spaceLocks = spaceLocks.slice(0, totalSpaces);
             while(structuralShelves.length < qPol) structuralShelves.push(false);
             if (structuralShelves.length > qPol) structuralShelves = structuralShelves.slice(0, qPol);
-            
+             
             let isSplitArr = [];
             for(let i = 0; i < totalSpaces; i++) {
                 isSplitArr[i] = (spaceLocks[i].currentVal === 0 && i > 0 && i < qPol && structuralShelves[i-1] && structuralShelves[i]);
             }
-            
+             
             for(let i = 0; i < totalSpaces; i++) { 
                 if(spaceLocks[i].hasDrawers && spaceLocks[i].drawerMode === 'manual') { 
                     let sl = spaceLocks[i];
@@ -1220,7 +1288,7 @@
                 let isLocked = spaceLocks[i].locked; let isOnlyUnlocked = (!isLocked && unlockedCount === 1); 
                 let isDrawers = spaceLocks[i].hasDrawers; let drawerMode = spaceLocks[i].drawerMode; 
                 let isManual = isDrawers && drawerMode === 'manual'; 
-                
+                 
                 let rowClass = 'space-row' + (isLocked ? ' locked' : '') + (isDrawers ? ' drawer-active' : '') + (isOnlyUnlocked && !isDrawers ? ' resultant' : ''); 
                 let btnClass = isLocked ? 'lock-btn locked' : 'lock-btn'; 
                 let btnText = isLocked ? '🔒 Odblokuj' : '🔓 Zablokuj'; 
@@ -1229,7 +1297,7 @@
                 let btnProps = (isOnlyUnlocked || isManual) ? 'disabled' : `onclick="toggleLock(${i})"`; 
  
                 let drawerHtml = `<div class="space-panel-inner">`; 
-                
+                 
                 drawerHtml += `
                     <div class="sp-header-row">
                         <div class="sp-select-group">
@@ -1384,7 +1452,25 @@
                 } 
                 drawerHtml += `</div>`; 
                 
-                controlsHtml += `<div class="${rowClass}"><div class="space-header"><div style="flex:1;"><label class="main-label">${label}</label>${drawerHtml}</div><div class="space-input-group" style="align-self: flex-start; margin-top:5px; margin-left: 10px;"><input type="number" value="${spaceLocks[i].currentVal}" onchange="handleSpaceInput(${i}, this.value)" ${inputProps}><button class="${btnClass}" ${btnProps}>${btnText}</button></div></div></div>`; 
+                // MIEJSCE Z NOWYMI PRZYCISKAMI PODZIAŁU I USUWANIA:
+                controlsHtml += `<div class="${rowClass}">
+                    <div class="space-header">
+                        <div style="flex:1;">
+                            <label class="main-label">${label}</label>${drawerHtml}
+                        </div>
+                        <div class="space-input-group" style="align-self: flex-start; margin-top:5px; margin-left: 10px; display:flex; flex-direction:column; gap:6px;">
+                            <div style="display:flex; gap:4px;">
+                                <input type="number" value="${spaceLocks[i].currentVal}" onchange="handleSpaceInput(${i}, this.value)" ${inputProps}>
+                                <button class="${btnClass}" ${btnProps}>${btnText}</button>
+                            </div>
+                            <div style="display:flex; gap:4px; align-self:flex-end;">
+                                <button type="button" class="btn-small-outline" style="padding: 4px 8px; border-color:#2e7d32; color:#2e7d32; font-weight:bold;" onclick="splitSpaceExact(${i})" title="Przetnij przestrzeń na pół (wstawia półkę)">✂️ Podziel</button>
+                                ${totalSpaces > 1 ? `<button type="button" class="btn-small-outline" style="padding: 4px 8px; border-color:#d32f2f; color:#d32f2f; font-weight:bold;" onclick="removeSpace(${i})" title="Usuń przestrzeń">🗑️ Usuń</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+                
                 if (i < totalSpaces - 1) { 
                     controlsHtml += `<div class="structural-divider"><label><input type="checkbox" ${structuralShelves[i] ? 'checked' : ''} onchange="toggleStructural(${i})"> 🔩 Półka konstrukcyjna (Wirtualne cięcie modułu)</label></div>`; 
                 } 
@@ -1394,12 +1480,12 @@
             let sideBottom = (kTyp === 'nakladane') ? cokol + tBoard : 0; 
             let sideTop = (kTyp === 'nakladane') ? hBox - tBoard : hBox; 
             let offsetOdDolu = (kTyp === 'nakladane') ? cokol : tBoard + cokol; 
-            
+             
             let osie = []; let spacesBoundary = []; let currentBottom = offsetOdDolu; 
             let localZeros = []; let visualGaps = []; 
             let currentZero = sideBottom; 
             let currentVisualGap = 0; 
-            
+             
             for(let i = 0; i < totalSpaces; i++) { 
                 let h = spaceLocks[i].currentVal; 
                 let isSplit = isSplitArr[i];
@@ -1409,7 +1495,7 @@
                 } 
                 localZeros.push(currentZero); 
                 visualGaps.push(currentVisualGap); 
-                
+                 
                 spacesBoundary.push({ 
                     index: i, hasDrawers: spaceLocks[i].hasDrawers, drawerMode: spaceLocks[i].drawerMode, 
                     manualFronts: spaceLocks[i].manualFronts, qDrawers: spaceLocks[i].qDrawers, spaceIdx: i, 
@@ -1427,20 +1513,20 @@
             } 
  
             let frontBlocks = []; let currentDoorBlock = null; let doorZawiasy = []; let drawerGuides = [];
-            
+             
             for(let i = 0; i < totalSpaces; i++) { 
                 let sb = spacesBoundary[i]; 
-                
+                 
                 if (sb.isSplit) { 
                     if (currentDoorBlock) { frontBlocks.push(currentDoorBlock); currentDoorBlock = null; } 
                     continue; 
                 } 
-                
+                 
                 let isFirstInModule = (i === 0) || (i > 0 && spacesBoundary[i-1].isSplit);
                 let isLastInModule = (i === totalSpaces - 1) || (i < totalSpaces - 1 && spacesBoundary[i+1].isSplit);
-                
+                 
                 let sl = spaceLocks[i];
-                
+                 
                 let def_nB = isFirstInModule ? nBottomGlobal : nWewGlobal;
                 let def_nT = isLastInModule ? nTopGlobal : nWewGlobal;
                 let def_nL = nLeftGlobal;
