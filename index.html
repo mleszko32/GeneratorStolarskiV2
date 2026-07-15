@@ -84,15 +84,9 @@
         .btn-load { background: #e2efda; border-color: #2e7d32; color: #2e7d32; flex: 1; } 
         .btn-delete { background: #fce8e8; border-color: #d32f2f; color: #d32f2f; } 
  
-        .svg-container { position: relative; overflow: hidden; background: #fafafa; border: 1px dashed #ccc; border-radius: 6px; flex: 1; min-height: 0; cursor: grab; display: flex; justify-content: center; align-items: center; margin-top: 15px; user-select: none; 
-            -webkit-user-select: none;} 
+        .svg-container { position: relative; overflow: hidden; background: #fafafa; border: 1px dashed #ccc; border-radius: 6px; flex: 1; min-height: 0; cursor: grab; display: flex; justify-content: center; align-items: center; margin-top: 15px; user-select: none; -webkit-user-select: none; } 
         .svg-container:active { cursor: grabbing; } 
-        .svg-wrapper { 
-            width: 100%; 
-            height: 100%; 
-            transform-origin: center center; 
-            pointer-events: none; 
-        }
+        .svg-wrapper { width: 100%; height: 100%; transform-origin: center center; pointer-events: none; } 
         
         #canvas-container { position: relative; overflow: hidden; background: #e8ebed; border: 1px dashed #ccc; border-radius: 6px; flex: 1; min-height: 0; display: none; justify-content: center; align-items: center; margin-top: 15px; } 
         #canvas-container canvas { display: block; width: 100% !important; height: 100% !important; outline: none; }
@@ -319,6 +313,7 @@
         // Eksportowane do 3D globalne wyniki
         window.lastFrontBlocks = [];
         window.lastOsie = [];
+        window.lastDrawerGuides = [];
 
         // ---------------- GLOBALNE ZMIENNE 3D ---------------- //
         let scene, camera, renderer, cabinetGroup, controls;
@@ -538,7 +533,99 @@
                 });
             }
 
-            // Fronty i szuflady 3D
+            // ==========================================
+            // --- DETALE 3D (NAWIERTY, ZAWIASY ITD.) ---
+            // ==========================================
+
+            const matHardware = new THREE.MeshStandardMaterial({ color: 0x909497, roughness: 0.4, metalness: 0.8 });
+            const matHole = new THREE.MeshBasicMaterial({ color: 0x222222, side: THREE.DoubleSide });
+
+            const pinGeom = new THREE.CylinderGeometry(2.5, 2.5, 10, 16);
+            pinGeom.rotateZ(Math.PI / 2); // Leżący poziomo po osi X
+            const cupGeom = new THREE.CylinderGeometry(17.5, 17.5, 12, 32);
+            cupGeom.rotateX(Math.PI / 2); // Patrzący po osi Z
+            const holeGeom = new THREE.CircleGeometry(2.5, 16);
+            holeGeom.rotateY(Math.PI / 2); // Patrzący po osi X
+            const plateGeom = new THREE.BoxGeometry(4, 15, 32);
+
+            let innerLeft = -wBox/2 + tBoard;
+            let innerRight = wBox/2 - tBoard;
+            let dystansTyl3D = (backType === 'nut') ? (nutDepthVal + 37) : 37;
+            let zHoles = [dystansTyl3D, dBox - 37];
+            if (dBox >= 500) zHoles.push(dBox / 2);
+
+            function addHw(geom, x, y, z, mat) {
+                let m = new THREE.Mesh(geom, mat);
+                m.position.set(x, y, z);
+                cabinetGroup.add(m);
+            }
+
+            // 1. Podpórki i nawierty półek
+            if (window.lastOsie && window.lastOsie.length > 0) {
+                window.lastOsie.forEach(os => {
+                    let yPositions = os.isStruct ? [os.osPrawdziwa] : [os.os - 32, os.os, os.os + 32];
+                    yPositions.forEach((yPos, idx) => {
+                        let isCenter = (yPositions.length === 1) || (idx === 1);
+                        zHoles.forEach(zPos => {
+                            if (os.isStruct || isCenter) {
+                                // Bolce podpórek / Konfirmaty
+                                addHw(pinGeom, innerLeft + 5, yPos, zPos, matHardware);
+                                addHw(pinGeom, innerRight - 5, yPos, zPos, matHardware);
+                            } else {
+                                // Puste otwory powiercone
+                                addHw(holeGeom, innerLeft + 0.1, yPos, zPos, matHole);
+                                addHw(holeGeom, innerRight - 0.1, yPos, zPos, matHole);
+                            }
+                        });
+                    });
+                });
+            }
+
+            // 2. Zawiasy (Prowadniki i puszki we frontach)
+            if (window.lastFrontBlocks && window.lastFrontBlocks.length > 0) {
+                window.lastFrontBlocks.forEach(fb => {
+                    if (fb.type === 'door' && fb.hinges) {
+                        let fFullW = (wBox - 2*tBoard) + fb.nL + fb.nR;
+                        let leftX = -wBox/2 + tBoard - fb.nL;
+                        
+                        fb.hinges.forEach(zaw => {
+                            let yPos = zaw.bodyY;
+                            if (fb.layout === 'full' || fb.layout === 'left' || fb.layout === 'double') {
+                                addHw(plateGeom, innerLeft + 2, yPos, dBox - 37, matHardware);
+                                addHw(cupGeom, leftX + 22.5, yPos, dBox + 9, matHardware); // Wgłębienie w płytę
+                            }
+                            if (fb.layout === 'right' || fb.layout === 'double') {
+                                addHw(plateGeom, innerRight - 2, yPos, dBox - 37, matHardware);
+                                addHw(cupGeom, leftX + fFullW - 22.5, yPos, dBox + 9, matHardware);
+                            }
+                        });
+                    }
+                });
+            }
+
+            // 3. Otwory pod prowadnice szuflad
+            if (window.lastDrawerGuides && window.lastDrawerGuides.length > 0) {
+                let sysDB = DRAWER_DB[document.getElementById('drawerSystem').value];
+                window.lastDrawerGuides.forEach(dg => {
+                    let yPos = dg.axisYTop;
+                    let holesArray = sysDB.yHolesMap[dg.currentNL] || []; 
+                    let firstHoleZ = dBox - 37;
+                    
+                    addHw(holeGeom, innerLeft + 0.1, yPos, firstHoleZ, matHole);
+                    addHw(holeGeom, innerRight - 0.1, yPos, firstHoleZ, matHole);
+
+                    holesArray.forEach(step => {
+                        let hZ = firstHoleZ - step;
+                        addHw(holeGeom, innerLeft + 0.1, yPos, hZ, matHole);
+                        addHw(holeGeom, innerRight - 0.1, yPos, hZ, matHole);
+                    });
+                });
+            }
+
+            // ===============================================
+            // --- PÓŁPRZEZROCZYSTE FRONTY (RENDER NA KOŃCU) -
+            // ===============================================
+
             if (window.lastFrontBlocks && window.lastFrontBlocks.length > 0) {
                 window.lastFrontBlocks.forEach(fb => {
                     if (fb.layout === 'none') return;
@@ -624,13 +711,9 @@
         } 
         function hideError() { document.getElementById('errorBox').style.display = 'none'; } 
  
+        // ---------------- NOWA FUNKCJA RUCHU MYSZKĄ (BEZ ZAZNACZANIA) ---------------- //
         function initZoomPan() { 
             const container = document.getElementById('svgContainer'); 
-            
-            // 1. Blokada domyślnego menu kontekstowego pod prawym przyciskiem myszy wewnątrz okna podglądu
-            container.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-            });
 
             container.addEventListener('wheel', (e) => { 
                 e.preventDefault(); 
@@ -642,19 +725,19 @@
             container.addEventListener('mousedown', (e) => { 
                 if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return; 
                 
-                // 2. To zapobiega domyślnemu "ciągnięciu" elementów przez przeglądarkę
-                e.preventDefault(); 
+                if (e.button !== 0) return; // Reaguj tylko na lewy przycisk
+                e.preventDefault(); // Zapobiega zaznaczaniu tekstu na żywo
                 
                 isDragging = true; 
                 startX = e.clientX - panX; 
-                startY = e.clientY - panY; 
+                startY = e.clientY - panY; // POPRAWIONE (nie trzęsie się)
                 container.style.cursor = 'grabbing';
             }); 
             
             window.addEventListener('mousemove', (e) => { 
                 if (!isDragging) return; 
                 panX = e.clientX - startX; 
-                panY = e.clientY - startY; 
+                panY = e.clientY - startY; // POPRAWIONE
                 applyTransform(); 
             }); 
             
@@ -667,7 +750,7 @@
                 isDragging = false; 
                 container.style.cursor = 'grab';
             }); 
-        }
+        } 
  
         function zoomManual(amount) { zScale = Math.min(Math.max(0.1, zScale + amount), 10); applyTransform(); } 
         function resetZoom() { zScale = 1; panX = 0; panY = 0; applyTransform(); } 
@@ -1484,7 +1567,6 @@
                 } 
                 drawerHtml += `</div>`; 
                 
-                // MIEJSCE Z NOWYMI PRZYCISKAMI PODZIAŁU I USUWANIA:
                 controlsHtml += `<div class="${rowClass}">
                     <div class="space-header">
                         <div style="flex:1;">
@@ -1680,6 +1762,7 @@
             // AKTUALIZACJA GLOBALNA DLA 3D
             window.lastFrontBlocks = frontBlocks;
             window.lastOsie = osie;
+            window.lastDrawerGuides = drawerGuides;
 
             // --- SVG RENDER --- 
             let sXCab = 0; let sXBok = wBox + 300; let sXFront = sXBok + dBox + 1200;  
