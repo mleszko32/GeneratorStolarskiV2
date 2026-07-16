@@ -348,21 +348,32 @@
             "54": { 
                 name: "Blum Merivobox", lengths: [270, 300, 350, 400, 450, 500, 550, 600], ltRequired: 3, 
                 yHolesMap: { 270: [96], 300: [128], 350: [128], 400: [192], 450: [192, 256], 500: [224, 288], 550: [224, 352], 600: [224, 384] }, 
-                types: [ { id: "N", label: "N (B. Niska)", minFront: 85.5, boxH: 69 }, { id: "M", label: "M (Niska)", minFront: 108, boxH: 91 }, { id: "K", label: "K (Średnia)", minFront: 146, boxH: 130 }, { id: "E", label: "E (Wysoka)", minFront: 209, boxH: 193 } ], 
+                types: [ 
+                    { id: "N", label: "N (B. Niska)", minFront: 85.5, boxH: 69, frontHolesY: [51, 83] }, 
+                    { id: "M", label: "M (Niska)", minFront: 108, boxH: 91, frontHolesY: [51, 83] }, 
+                    { id: "K", label: "K (Średnia)", minFront: 146, boxH: 130, frontHolesY: [51, 83] }, 
+                    { id: "E", label: "E (Wysoka)", minFront: 209, boxH: 193, frontHolesY: [51, 83, 147, 179] } 
+                ], 
                 default: "K",
                 cutConfig: { boardThick: 16, bottomW: (LW) => LW - 51, bottomL: (NL) => NL - 26, backW: (LW) => LW - 74 }
             }, 
             "33": { 
                 name: "Blum Antaro / Tandembox", lengths: [270, 300, 350, 400, 450, 500, 550, 600, 650], ltRequired: 3, 
                 yHolesMap: { 270: [96], 300: [128], 350: [128], 400: [192], 450: [192, 288], 500: [224, 288], 550: [224, 384], 600: [224, 384], 650: [224, 384, 480] }, 
-                types: [ { id: "N", label: "N (B. Niska)", minFront: 82.5, boxH: 69 }, { id: "M", label: "M (Niska)", minFront: 98.5, boxH: 84 }, { id: "K", label: "K (Średnia)", minFront: 130.5, boxH: 116 }, { id: "C", label: "C (Wysoka)", minFront: 192, boxH: 167 }, { id: "D", label: "D (B. Wysoka)", minFront: 224, boxH: 199 } ], 
+                types: [ 
+                    { id: "N", label: "N (B. Niska)", minFront: 82.5, boxH: 69, frontHolesY: [47.5, 79.5] }, 
+                    { id: "M", label: "M (Niska)", minFront: 98.5, boxH: 84, frontHolesY: [47.5, 79.5] }, 
+                    { id: "K", label: "K (Średnia)", minFront: 130.5, boxH: 116, frontHolesY: [47.5, 79.5] }, 
+                    { id: "C", label: "C (Wysoka)", minFront: 192, boxH: 167, frontHolesY: [47.5, 79.5, 143.5, 175.5] }, 
+                    { id: "D", label: "D (B. Wysoka)", minFront: 224, boxH: 199, frontHolesY: [47.5, 79.5, 143.5, 175.5] } 
+                ], 
                 default: "D",
                 cutConfig: { boardThick: 16, bottomW: (LW) => LW - 75, bottomL: (NL) => NL - 24, backW: (LW) => LW - 87 }
             }, 
             "custom": { 
                 name: "Inne (Własne)", lengths: [250, 300, 350, 400, 450, 500, 550, 600], ltRequired: 3, 
                 yHolesMap: { 250: [96], 300: [128], 350: [128], 400: [192], 450: [192], 500: [224], 550: [224], 600: [224] }, 
-                types: [ { id: "UNI", label: "Uniwersalna", minFront: 60, boxH: 100 } ], default: "UNI",
+                types: [ { id: "UNI", label: "Uniwersalna", minFront: 60, boxH: 100, frontHolesY: [47.5, 79.5] } ], default: "UNI",
                 cutConfig: { boardThick: 16, bottomW: (LW) => LW - 75, bottomL: (NL) => NL - 24, backW: (LW) => LW - 75 }
             } 
         }; 
@@ -2125,8 +2136,6 @@
                                     }
                                 }
                                 // --- KONIEC RYSOWANIA NAWIERTÓW ---
-
-                               
 
                                 let drTypeLabel = "";
                                 if (fb.drawerMode === 'manual' && fb.manualFronts[idx]) { 
