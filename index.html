@@ -142,6 +142,7 @@
                 <label><input type="checkbox" id="sFront" checked onchange="run()"> Rzut Frontu</label> 
                 <label><input type="checkbox" id="sDrawerTopHoles" checked onchange="run()"> Szuflada - Otwór montażowy</label> 
                 <label><input type="checkbox" id="sDrawerYDim" checked onchange="run()"> Szuflada - Rozstawy w poziomie (Y)</label> 
+                <label><input type="checkbox" id="sDrawerFrontHoles" checked onchange="run()"> Fronty - Nawierty szuflad</label>
                 <label style="color:#d32f2f; font-weight:bold; grid-column: span 2;"><input type="checkbox" id="rcMode" onchange="run()"> 🛠 RCSystem</label>
             </div> 
  
@@ -323,14 +324,24 @@
             "44": { 
                 name: "GTV Axis Pro / Modern Box", lengths: [250, 300, 350, 400, 450, 500, 550, 600], ltRequired: 5, 
                 yHolesMap: { 250: [96], 300: [128], 350: [128], 400: [192], 450: [192], 500: [224], 550: [224], 600: [224, 352] }, 
-                types: [ { id: "A", label: "A (Niska)", minFront: 105, boxH: 84 }, { id: "B", label: "B (Średnia)", minFront: 160, boxH: 116 }, { id: "C", label: "C (Wysoka)", minFront: 192, boxH: 167 }, { id: "D", label: "D (B. Wysoka)", minFront: 224, boxH: 199 } ], 
+                types: [ 
+                    { id: "A", label: "A (Niska)", minFront: 105, boxH: 84, frontHolesY: [47.5, 79.5] }, 
+                    { id: "B", label: "B (Średnia)", minFront: 160, boxH: 116, frontHolesY: [47.5, 79.5] }, 
+                    { id: "C", label: "C (Wysoka)", minFront: 192, boxH: 167, frontHolesY: [47.5, 79.5, 143.5, 175.5] }, 
+                    { id: "D", label: "D (B. Wysoka)", minFront: 224, boxH: 199, frontHolesY: [47.5, 79.5, 143.5, 175.5] } 
+                ], 
                 default: "C",
                 cutConfig: { boardThick: 16, bottomW: (LW) => LW - 87, bottomL: (NL) => NL - 24, backW: (LW) => LW - 87 }
             }, 
             "44_18": { 
                 name: "GTV Axis Pro (Dno 18mm)", lengths: [250, 300, 350, 400, 450, 500, 550, 600], ltRequired: 5, 
                 yHolesMap: { 250: [96], 300: [128], 350: [128], 400: [192], 450: [192], 500: [224], 550: [224], 600: [224, 352] }, 
-                types: [ { id: "A", label: "A (H=86)", minFront: 115, boxH: 84 }, { id: "B", label: "B (H=120)", minFront: 147, boxH: 116 }, { id: "C", label: "C (H=168)", minFront: 198, boxH: 167 }, { id: "D", label: "D (H=200)", minFront: 230, boxH: 199 } ], 
+                types: [ 
+                    { id: "A", label: "A (H=86)", minFront: 115, boxH: 84, frontHolesY: [47.5, 79.5] }, 
+                    { id: "B", label: "B (H=120)", minFront: 147, boxH: 116, frontHolesY: [47.5, 79.5] }, 
+                    { id: "C", label: "C (H=168)", minFront: 198, boxH: 167, frontHolesY: [47.5, 79.5, 143.5, 175.5] }, 
+                    { id: "D", label: "D (H=200)", minFront: 230, boxH: 199, frontHolesY: [47.5, 79.5, 143.5, 175.5] } 
+                ], 
                 default: "C",
                 cutConfig: { boardThick: 18, bottomW: (LW) => LW - 75, bottomL: (NL) => NL - 24, backW: (LW) => LW - 87 }
             },
@@ -2055,8 +2066,69 @@
                             let drH = dr.yEnd - dr.yStart; 
                              
                             rects.forEach(r => {
-                                svg += `<rect x="${r.x}" y="${hBox - dr.yEnd - fb.visualGap}" width="${r.w}" height="${drH}" fill="#e8f0fe" stroke="#1F4E79" stroke-width="${lineW}"/>`; 
-                                let drTypeLabel = ""; 
+                                let rectTopSVG = hBox - dr.yEnd - fb.visualGap;
+                                svg += `<rect x="${r.x}" y="${rectTopSVG}" width="${r.w}" height="${drH}" fill="#e8f0fe" stroke="#1F4E79" stroke-width="${lineW}"/>`; 
+                                
+                                // --- NOWY KOD: RYSOWANIE NAWIERTÓW (LOGIKA WARSZTATOWA - OD KRAWĘDZI FRONTU) ---
+                                if (isChecked('sDrawerFrontHoles')) {
+                                    let sysTypeObj = sysDB.types.find(t => t.id === dr.type);
+                                    if (sysTypeObj && sysTypeObj.frontHolesY) {
+                                        
+                                        // 1. Ustalenie nałożeń dla tego konkretnego frontu
+                                        let nL = fb.nL !== undefined ? fb.nL : val('nLeft');
+                                        let nR = fb.nR !== undefined ? fb.nR : val('nRight');
+                                        let nWew = val('nWewnetrzne');
+                                        
+                                        // Jeśli front jest podwójny (L+P), to od strony styku działa nałożenie wewnętrzne
+                                        let active_nL = (fb.layout === 'double' && r.hinge === 'right') ? nWew : nL;
+                                        let active_nR = (fb.layout === 'double' && r.hinge === 'left') ? nWew : nR;
+                                        
+                                        // Oś Y otworów: 
+                                        // 1. Pierwszy front od dołu dostaje korektę o nałożenie na wieniec (nB).
+                                        // 2. Wyższe fronty to ZAWSZE równe wymiary katalogowe (np. 47.5) od ich własnej dolnej krawędzi.
+                                        let nB = spaceLocks[fb.spaceIdx].nB !== undefined ? spaceLocks[fb.spaceIdx].nB : val('nBottom');
+                                        let active_nB = (idx === 0) ? nB : 0;
+                                        
+                                        // 2. Wyliczenie fizycznych odległości od krawędzi formatki
+                                        let xDistLeft = active_nL + 15.5;
+                                        let xDistRight = active_nR + 15.5;
+                                        
+                                        let fBottomSVG = rectTopSVG + drH; // Fizyczny dół narysowanego frontu w SVG
+                                        
+                                        sysTypeObj.frontHolesY.forEach((nominalY, holeIndex) => {
+                                            // Dodajemy nałożenie dolne do wymiaru z rysunku (np. 18 + 47.5 = 65.5 od dołu frontu)
+                                            let yDistBottom = active_nB + nominalY; 
+                                            
+                                            let cxLeft = r.x + xDistLeft;
+                                            let cxRight = r.x + r.w - xDistRight;
+                                            let cy = fBottomSVG - yDistBottom;
+                                            
+                                            // Rysowanie kropek
+                                            svg += `<circle cx="${cxLeft}" cy="${cy}" r="3" fill="#d32f2f" stroke="#b71c1c" stroke-width="1"/>`;
+                                            svg += `<circle cx="${cxRight}" cy="${cy}" r="3" fill="#d32f2f" stroke="#b71c1c" stroke-width="1"/>`;
+                                            
+                                            // Wymiarowanie kontrolne na SVG (drukowane tylko przy pierwszym dolnym otworze)
+                                            if (holeIndex === 0) {
+                                                // Wymiar X od LEWEJ krawędzi
+                                                svg += `<line x1="${r.x}" y1="${cy}" x2="${cxLeft}" y2="${cy}" stroke="#d32f2f" stroke-dasharray="2,2" stroke-width="1.5"/>`;
+                                                svg += `<text x="${r.x + xDistLeft/2}" y="${cy - 5}" font-size="${fontS - 4}" font-weight="bold" fill="#d32f2f" text-anchor="middle">${formatDim(xDistLeft)}</text>`;
+                                                
+                                                // Wymiar X od PRAWEJ krawędzi
+                                                svg += `<line x1="${cxRight}" y1="${cy}" x2="${r.x + r.w}" y2="${cy}" stroke="#d32f2f" stroke-dasharray="2,2" stroke-width="1.5"/>`;
+                                                svg += `<text x="${r.x + r.w - xDistRight/2}" y="${cy - 5}" font-size="${fontS - 4}" font-weight="bold" fill="#d32f2f" text-anchor="middle">${formatDim(xDistRight)}</text>`;
+                                                
+                                                // Wymiar Y od dolnej krawędzi
+                                                svg += `<line x1="${cxLeft}" y1="${fBottomSVG}" x2="${cxLeft}" y2="${cy}" stroke="#d32f2f" stroke-dasharray="2,2" stroke-width="1.5"/>`;
+                                                svg += `<text x="${cxLeft + 5}" y="${cy + yDistBottom/2 + 5}" font-size="${fontS - 4}" font-weight="bold" fill="#d32f2f" text-anchor="start">${formatDim(yDistBottom)}</text>`;
+                                            }
+                                        });
+                                    }
+                                }
+                                // --- KONIEC RYSOWANIA NAWIERTÓW ---
+
+                               
+
+                                let drTypeLabel = "";
                                 if (fb.drawerMode === 'manual' && fb.manualFronts[idx]) { 
                                     let tObj = sysDB.types.find(t => t.id === fb.manualFronts[idx].type); 
                                     if(tObj) drTypeLabel = ` [Typ: ${tObj.label}]`; 
